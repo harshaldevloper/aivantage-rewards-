@@ -1,0 +1,32 @@
+{
+  "name": "05-demo-test",
+  "scene": "scene-mascot.html",
+  "keyword": "EDIT",
+  "palette": "mint",
+  "voice": "en-US-AndrewMultilingualNeural",
+  "rate": "+8%",
+  "script": "There's a free Photoshop that runs inside a browser tab. No download. No account. No watermark. It opens P.S.D. files with your layers still intact. Type EDIT in the comments. It only sends to followers, that's just how it works.",
+  "highlight": ["free", "edit", "layers"],
+  "hot": ["no", "not", "only", "followers"],
+  "stackPhrases": ["No download", "No account", "No watermark"],
+  "sub": "IT ONLY DMS PEOPLE WHO FOLLOW",
+  "demo": {
+    "title": "browser tab",
+    "inputIcon": "PSD",
+    "input": "poster-final.psd",
+    "action": "Reading layers",
+    "outputs": 3,
+    "cols": 3,
+    "outputLabel": "Layer",
+    "tileHeight": 140,
+    "start": 2.8,
+    "end": 11.5
+  },
+  "beats": [
+    { "cue": 0, "pose": "present", "expr": "wide" },
+    { "cue": 1, "pose": "point",   "expr": "neutral" },
+    { "cue": 4, "pose": "shrug",   "expr": "sly" },
+    { "cue": 5, "pose": "cheer",   "expr": "happy" },
+    { "cue": 6, "pose": "point",   "expr": "happy" }
+  ]
+}

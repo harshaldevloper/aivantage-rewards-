@@ -1,0 +1,70 @@
+{
+  "name": "c06-tokens",
+  "scene": "scene-mascot.html",
+  "keyword": "TOKENS",
+  "palette": "cinema",
+  "voice": "en-US-AndrewMultilingualNeural",
+  "rate": "+8%",
+  "script": "There's an A.I. that hands you a hundred and fifty image credits every single day, and you're allowed to sell what you make. No card. No trial clock. No monthly cap. But here is the catch nobody mentions, on the free plan your images are public and anyone can copy them. Type TOKENS in the comments.",
+  "highlight": [
+    "hundred",
+    "fifty",
+    "every",
+    "day",
+    "tokens"
+  ],
+  "hot": [
+    "no",
+    "not",
+    "nothing",
+    "only",
+    "catch",
+    "public"
+  ],
+  "stackPhrases": [
+    "No card",
+    "No trial clock",
+    "No monthly cap"
+  ],
+  "sub": "IT CAN'T MESSAGE YOU IF YOU DON'T FOLLOW",
+  "demo": {
+    "act": "process",
+    "title": "image studio",
+    "inputIcon": "AI",
+    "input": "a product on marble",
+    "action": "Generating",
+    "outputs": 3,
+    "cols": 3,
+    "outputLabel": "Image",
+    "tileHeight": 140,
+    "start": 2.6,
+    "end": 11.5
+  },
+  "beats": [
+    {
+      "cue": 0,
+      "pose": "present",
+      "expr": "wide"
+    },
+    {
+      "cue": 1,
+      "pose": "point",
+      "expr": "neutral"
+    },
+    {
+      "cue": 4,
+      "pose": "shrug",
+      "expr": "sly"
+    },
+    {
+      "cue": 5,
+      "pose": "cheer",
+      "expr": "happy"
+    },
+    {
+      "cue": 6,
+      "pose": "point",
+      "expr": "happy"
+    }
+  ]
+}

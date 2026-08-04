@@ -1,0 +1,23 @@
+{
+  "name": "05-slides",
+  "scene": "scene-mascot.html",
+  "keyword": "SLIDES",
+  "palette": "mint",
+  "voice": "en-US-AndrewMultilingualNeural",
+  "rate": "+9%",
+  "script": "Students, stop making your slides by hand. Upload your messy notes, get a finished PowerPoint back. Real slides, real formatting, still editable. No design skills. No manual work. No software licence. Save this before your next assignment. I'm not naming it here. Comment SLIDES. Follow first, or the D.M. can't reach you.",
+  "highlight": ["finished", "real", "slides", "free", "save"],
+  "hot": ["no", "not", "naming", "follow", "first"],
+  "stackPhrases": ["No design skills", "No manual work", "No software licence"],
+  "sub": "FOLLOW FIRST OR THE DM WON'T SEND",
+  "beats": [
+    { "cue": 0, "pose": "point",   "expr": "wide" },
+    { "cue": 1, "pose": "present", "expr": "happy" },
+    { "cue": 2, "pose": "cheer",   "expr": "happy" },
+    { "cue": 3, "pose": "shrug",   "expr": "sly" },
+    { "cue": 6, "pose": "present", "expr": "happy" },
+    { "cue": 7, "pose": "hush",    "expr": "sly" },
+    { "cue": 8, "pose": "point",   "expr": "happy" },
+    { "cue": 9, "pose": "cheer",   "expr": "wide" }
+  ]
+}

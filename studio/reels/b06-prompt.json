@@ -1,0 +1,62 @@
+{
+  "name": "b06-prompt",
+  "scene": "scene-mascot.html",
+  "keyword": "PROMPT",
+  "palette": "mint",
+  "voice": "en-US-AndrewMultilingualNeural",
+  "rate": "+8%",
+  "script": "One sentence in. A fully edited video out, with stock footage, voiceover and subtitles already done. This is the one I actually pay for. The free version works, it just adds a watermark. Type PROMPT in the comments and I'll send it.",
+  "highlight": [
+    "one",
+    "sentence",
+    "fully",
+    "prompt"
+  ],
+  "hot": [
+    "no",
+    "not",
+    "nothing",
+    "only",
+    "followers"
+  ],
+  "stackPhrases": [
+    "No filming",
+    "No editing",
+    "No voice actor"
+  ],
+  "sub": "IT CAN'T MESSAGE YOU IF YOU DON'T FOLLOW",
+  "demo": {
+    "act": "video",
+    "title": "prompt to video",
+    "input": "60-second video on morning habits",
+    "start": 2.6,
+    "end": 11
+  },
+  "beats": [
+    {
+      "cue": 0,
+      "pose": "present",
+      "expr": "wide"
+    },
+    {
+      "cue": 1,
+      "pose": "point",
+      "expr": "neutral"
+    },
+    {
+      "cue": 4,
+      "pose": "shrug",
+      "expr": "sly"
+    },
+    {
+      "cue": 5,
+      "pose": "cheer",
+      "expr": "happy"
+    },
+    {
+      "cue": 6,
+      "pose": "point",
+      "expr": "happy"
+    }
+  ]
+}

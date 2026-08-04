@@ -1,0 +1,23 @@
+{
+  "name": "04-edit",
+  "scene": "scene-mascot.html",
+  "keyword": "EDIT",
+  "palette": "ember",
+  "voice": "en-US-AndrewMultilingualNeural",
+  "rate": "+8%",
+  "script": "There's a free Photoshop that runs inside a browser tab. No download. No account. No watermark. It opens P.S.D. files with real layers and real masks. And it runs on your own machine, so your photos never get uploaded anywhere. Adobe charges you every single month. This one charges nothing. I'm not naming it in this video. Comment the word EDIT and I'll send it straight to you. But follow first, because the D.M. can't reach you if you don't.",
+  "highlight": ["free", "edit", "nothing", "layers", "masks"],
+  "hot": ["no", "not", "naming", "follow", "first"],
+  "stackPhrases": ["No download", "No account", "No watermark"],
+  "sub": "FOLLOW FIRST OR THE DM WON'T SEND",
+  "beats": [
+    { "cue": 0, "pose": "present", "expr": "wide" },
+    { "cue": 1, "pose": "shrug",   "expr": "sly" },
+    { "cue": 4, "pose": "point",   "expr": "neutral" },
+    { "cue": 5, "pose": "idle",    "expr": "happy" },
+    { "cue": 6, "pose": "cheer",   "expr": "happy" },
+    { "cue": 7, "pose": "hush",    "expr": "sly" },
+    { "cue": 8, "pose": "point",   "expr": "happy" },
+    { "cue": 9, "pose": "cheer",   "expr": "wide" }
+  ]
+}

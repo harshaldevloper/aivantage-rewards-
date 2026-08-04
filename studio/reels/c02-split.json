@@ -1,0 +1,69 @@
+{
+  "name": "c02-split",
+  "scene": "scene-mascot.html",
+  "keyword": "SPLIT",
+  "palette": "violet",
+  "voice": "en-US-AndrewMultilingualNeural",
+  "rate": "+8%",
+  "script": "There's a free A.I. that pulls the vocals straight out of any song. Drums, bass, guitar and piano, all separated. No install. No plugin. No studio. It runs in a browser tab. The free version shows ads, that's the whole trade. Type SPLIT in the comments.",
+  "highlight": [
+    "free",
+    "vocals",
+    "split",
+    "browser"
+  ],
+  "hot": [
+    "no",
+    "not",
+    "nothing",
+    "only",
+    "catch",
+    "public"
+  ],
+  "stackPhrases": [
+    "No install",
+    "No plugin",
+    "No studio"
+  ],
+  "sub": "NOT FOLLOWING? IT CAN'T REACH YOU",
+  "demo": {
+    "act": "process",
+    "title": "stem splitter",
+    "inputIcon": "MP3",
+    "input": "song.mp3",
+    "action": "Separating stems",
+    "outputs": 4,
+    "cols": 4,
+    "outputLabel": "Stem",
+    "tileHeight": 120,
+    "start": 2.6,
+    "end": 11.5
+  },
+  "beats": [
+    {
+      "cue": 0,
+      "pose": "present",
+      "expr": "wide"
+    },
+    {
+      "cue": 1,
+      "pose": "point",
+      "expr": "neutral"
+    },
+    {
+      "cue": 4,
+      "pose": "shrug",
+      "expr": "sly"
+    },
+    {
+      "cue": 5,
+      "pose": "cheer",
+      "expr": "happy"
+    },
+    {
+      "cue": 6,
+      "pose": "point",
+      "expr": "happy"
+    }
+  ]
+}

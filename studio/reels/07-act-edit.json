@@ -1,0 +1,26 @@
+{
+  "name": "07-act-edit",
+  "scene": "scene-mascot.html",
+  "keyword": "EDIT",
+  "palette": "violet",
+  "voice": "en-US-AndrewMultilingualNeural",
+  "rate": "+8%",
+  "script": "There's a free photo editor that runs inside a browser tab. No download. No account. No watermark. It opens layered files and exports clean. Type EDIT in the comments. It only sends to followers, that's just how it works.",
+  "highlight": ["free", "edit", "clean"],
+  "hot": ["no", "not", "only", "followers"],
+  "stackPhrases": ["No download", "No account", "No watermark"],
+  "sub": "IT ONLY DMS PEOPLE WHO FOLLOW",
+  "demo": {
+    "act": "edit",
+    "title": "browser tab",
+    "layers": ["Background", "Subject cut-out", "Colour grade"],
+    "start": 2.5,
+    "end": 12.0
+  },
+  "beats": [
+    { "cue": 0, "pose": "present", "expr": "wide" },
+    { "cue": 1, "pose": "point", "expr": "neutral" },
+    { "cue": 4, "pose": "shrug", "expr": "sly" },
+    { "cue": 5, "pose": "cheer", "expr": "happy" }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "name": "01-clips",
+  "keyword": "CLIPS",
+  "palette": "cinema",
+  "voice": "en-US-AndrewMultilingualNeural",
+  "rate": "+8%",
+  "script": "There's an A.I. that gives you six cinematic video clips. Every single day. Completely free. You type one sentence, it makes the shot. No camera. No editing. No subscription. I'm not naming it in this video. Comment the word CLIPS and I'll send it straight to you. But follow first, because the D.M. can't reach you if you don't.",
+  "highlight": ["six", "free", "clips", "day", "one"],
+  "hot": ["no", "not", "naming", "follow", "first"],
+  "stackPhrases": ["No camera", "No editing", "No subscription"],
+  "sub": "FOLLOW FIRST OR THE DM WON'T SEND"
+}

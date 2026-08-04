@@ -1,0 +1,68 @@
+{
+  "name": "b03-offline",
+  "scene": "scene-mascot.html",
+  "keyword": "OFFLINE",
+  "palette": "mint",
+  "voice": "en-US-AndrewMultilingualNeural",
+  "rate": "+8%",
+  "script": "You can run A.I. on your own laptop with the internet switched off. Nothing uploads. Nothing is logged. Nothing costs money. It's open source, so no company can ever put it behind a paywall. Honest catch, you'll need a decent machine. Type OFFLINE in the comments.",
+  "highlight": [
+    "own",
+    "off",
+    "open",
+    "source"
+  ],
+  "hot": [
+    "no",
+    "not",
+    "nothing",
+    "only",
+    "followers"
+  ],
+  "stackPhrases": [
+    "Nothing uploads",
+    "Nothing is logged",
+    "Nothing costs money"
+  ],
+  "sub": "FOLLOWERS ONLY — THAT'S HOW IT SENDS",
+  "demo": {
+    "act": "process",
+    "title": "your machine",
+    "inputIcon": ">_",
+    "input": "run model locally",
+    "action": "Loading — no internet",
+    "outputs": 3,
+    "cols": 3,
+    "outputLabel": "Local",
+    "tileHeight": 130,
+    "start": 2.8,
+    "end": 12
+  },
+  "beats": [
+    {
+      "cue": 0,
+      "pose": "present",
+      "expr": "wide"
+    },
+    {
+      "cue": 1,
+      "pose": "point",
+      "expr": "neutral"
+    },
+    {
+      "cue": 4,
+      "pose": "shrug",
+      "expr": "sly"
+    },
+    {
+      "cue": 5,
+      "pose": "cheer",
+      "expr": "happy"
+    },
+    {
+      "cue": 6,
+      "pose": "point",
+      "expr": "happy"
+    }
+  ]
+}

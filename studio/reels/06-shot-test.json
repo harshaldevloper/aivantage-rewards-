@@ -1,0 +1,14 @@
+{
+  "name": "06-shot-test",
+  "toolName": "Photopea",
+  "shot": {
+    "url": "https://www.photopea.com",
+    "width": 1440,
+    "height": 900,
+    "settle": 6000,
+    "clickText": ["Start using"],
+    "afterClick": 8000,
+    "clip": { "x": 0, "y": 40, "width": 1440, "height": 700 },
+    "hide": ["[class*='modal' i]", "[class*='popup' i]", "iframe", "[class*='ad' i]"]
+  }
+}

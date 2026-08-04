@@ -1,0 +1,62 @@
+{
+  "name": "c03-restore",
+  "scene": "scene-mascot.html",
+  "keyword": "RESTORE",
+  "palette": "ember",
+  "voice": "en-US-AndrewMultilingualNeural",
+  "rate": "+8%",
+  "script": "There's a free A.I. that repairs old crackly recordings. Voicemails, cassette tapes, voice notes from years ago. It rebuilds the frequencies that were never recorded. No account. No upload. No subscription. Everything happens on your machine. Type RESTORE in the comments.",
+  "highlight": [
+    "free",
+    "restore",
+    "rebuilds"
+  ],
+  "hot": [
+    "no",
+    "not",
+    "nothing",
+    "only",
+    "catch",
+    "public"
+  ],
+  "stackPhrases": [
+    "No account",
+    "No upload",
+    "No subscription"
+  ],
+  "sub": "FOLLOWERS ONLY — THAT'S HOW IT SENDS",
+  "demo": {
+    "act": "video",
+    "title": "audio repair",
+    "input": "voicemail-1998.wav",
+    "start": 2.6,
+    "end": 11.5
+  },
+  "beats": [
+    {
+      "cue": 0,
+      "pose": "present",
+      "expr": "wide"
+    },
+    {
+      "cue": 1,
+      "pose": "point",
+      "expr": "neutral"
+    },
+    {
+      "cue": 4,
+      "pose": "shrug",
+      "expr": "sly"
+    },
+    {
+      "cue": 5,
+      "pose": "cheer",
+      "expr": "happy"
+    },
+    {
+      "cue": 6,
+      "pose": "point",
+      "expr": "happy"
+    }
+  ]
+}

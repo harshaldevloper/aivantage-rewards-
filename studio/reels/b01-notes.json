@@ -1,0 +1,68 @@
+{
+  "name": "b01-notes",
+  "scene": "scene-mascot.html",
+  "keyword": "NOTES",
+  "palette": "violet",
+  "voice": "en-US-AndrewMultilingualNeural",
+  "rate": "+8%",
+  "script": "There's an A.I. that turns your notes into a podcast. Two voices, discussing your own study material. No reading. No highlighting. No re-writing. Three free every single day. Type NOTES in the comments and I'll send it.",
+  "highlight": [
+    "podcast",
+    "three",
+    "free",
+    "notes"
+  ],
+  "hot": [
+    "no",
+    "not",
+    "nothing",
+    "only",
+    "followers"
+  ],
+  "stackPhrases": [
+    "No reading",
+    "No highlighting",
+    "No re-writing"
+  ],
+  "sub": "IT ONLY DMS PEOPLE WHO FOLLOW",
+  "demo": {
+    "act": "process",
+    "title": "browser tab",
+    "inputIcon": "PDF",
+    "input": "lecture-notes.pdf",
+    "action": "Building audio overview",
+    "outputs": 3,
+    "cols": 3,
+    "outputLabel": "Track",
+    "tileHeight": 130,
+    "start": 2.6,
+    "end": 11
+  },
+  "beats": [
+    {
+      "cue": 0,
+      "pose": "present",
+      "expr": "wide"
+    },
+    {
+      "cue": 1,
+      "pose": "point",
+      "expr": "neutral"
+    },
+    {
+      "cue": 4,
+      "pose": "shrug",
+      "expr": "sly"
+    },
+    {
+      "cue": 5,
+      "pose": "cheer",
+      "expr": "happy"
+    },
+    {
+      "cue": 6,
+      "pose": "point",
+      "expr": "happy"
+    }
+  ]
+}

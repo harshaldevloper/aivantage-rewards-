@@ -1,0 +1,66 @@
+{
+  "name": "b05-resume",
+  "scene": "scene-mascot.html",
+  "keyword": "RESUME",
+  "palette": "ember",
+  "voice": "en-US-AndrewMultilingualNeural",
+  "rate": "+8%",
+  "script": "There's a free A.I. that rewrites your entire C.V. in about thirty seconds. It scores you against the job description before a human ever sees it. No signup. No payment. No watermark on the P.D.F. Type RESUME in the comments and I'll send it.",
+  "highlight": [
+    "free",
+    "thirty",
+    "resume",
+    "scores"
+  ],
+  "hot": [
+    "no",
+    "not",
+    "nothing",
+    "only",
+    "followers"
+  ],
+  "stackPhrases": [
+    "No signup",
+    "No payment",
+    "No watermark"
+  ],
+  "sub": "FOLLOW OR THE MESSAGE WON'T LAND",
+  "demo": {
+    "act": "edit",
+    "title": "resume builder",
+    "layers": [
+      "Bullet points rewritten",
+      "Summary generated",
+      "ATS score checked"
+    ],
+    "start": 2.6,
+    "end": 12
+  },
+  "beats": [
+    {
+      "cue": 0,
+      "pose": "present",
+      "expr": "wide"
+    },
+    {
+      "cue": 1,
+      "pose": "point",
+      "expr": "neutral"
+    },
+    {
+      "cue": 4,
+      "pose": "shrug",
+      "expr": "sly"
+    },
+    {
+      "cue": 5,
+      "pose": "cheer",
+      "expr": "happy"
+    },
+    {
+      "cue": 6,
+      "pose": "point",
+      "expr": "happy"
+    }
+  ]
+}

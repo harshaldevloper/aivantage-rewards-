@@ -1,0 +1,75 @@
+{
+  "name": "yt-04-students",
+  "scene": "scene-yt.html",
+  "format": "landscape",
+  "palette": "violet",
+  "voice": "en-US-AndrewMultilingualNeural",
+  "rate": "+6%",
+  "keyword": "NONE",
+  "script": "Five free A.I. tools for students, and I checked every single limit on the company's own pricing page rather than copying it from a list. One of them is the single best free tool I have found all year. Here is how I check. Roundup articles copy each other, and the numbers rot quietly over months. Nobody goes back and updates them. So I open the pricing page and read what is written on it today. If a limit is not published, I say so instead of guessing. First, Gemini Notebook. You upload your lecture notes or a P.D.F. and it produces an audio overview, which is two voices discussing your own material like a podcast. Revise while you walk. On the free plan you get one hundred notebooks, fifty sources in each one, and three audio overviews per day. Google renamed this from NotebookLM in July. Same product, and the free tier survived the rename intact. Second, SlideSpeak. It turns a document into a presentation, and the important part is that it exports a real PowerPoint file. Most A.I. slide tools trap the result inside their own viewer, so the moment your college wants a P.P.T.X. uploaded you are stuck. This one hands you a genuine file you can keep editing. Free plan is one hundred credits and a fifty megabyte upload cap. Several articles claim it is unlimited. It is not, and their own pricing page says so plainly. Third, Photopea. A full Photoshop class editor that opens in a browser tab with no download and no account. It reads real P.S.D. files with layers intact and exports with no watermark and no daily limit. It runs on your own machine, so your images never get uploaded anywhere. The only catch is ads in a side panel. Fourth, FreeCV. When you start applying for placements, this rewrites your bullet points, writes your summary, and scores your C.V. against the job description before a human ever reads it. No signup, no payment, and the P.D.F. comes out clean with no watermark. Fifth, and this is the best one, Upscayl. It makes old blurry photos sharp, up to sixteen times larger, and it runs entirely on your own computer. It is open source, so no company can ever put it behind a paywall. No account, no credits, no watermark, no cap. Nothing on this list comes close to that. If you only take one thing from this video, take that one. Everything else here has a company behind it that could change its mind. That one cannot.",
+  "segments": [
+    {
+      "cueStartsWith": "Five free A.I. tools for students",
+      "chapter": "Today",
+      "kicker": "Every limit verified this week",
+      "name": "5 free tools for students",
+      "facts": ["Checked on each company's own pricing page", "One is the best free tool I've found all year"],
+      "verdict": "neutral",
+      "verdictText": "No numbers copied from anyone else's list."
+    },
+    {
+      "cueStartsWith": "Here is how I check",
+      "chapter": "Method",
+      "kicker": "Why the numbers here differ",
+      "name": "Roundups go stale.",
+      "facts": ["Articles copy each other; nobody re-checks months later", "If a limit isn't published, I say so instead of guessing"],
+      "verdict": "neutral",
+      "verdictText": "Read the pricing page. It takes ten minutes."
+    },
+    {
+      "cueStartsWith": "First, Gemini Notebook",
+      "chapter": "1 of 5",
+      "kicker": "Free · students",
+      "name": "Gemini Notebook",
+      "facts": ["Your notes become two voices discussing them, like a podcast", "100 notebooks, 50 sources each, 3 audio overviews a day", "Renamed from NotebookLM in July — free tier survived"],
+      "verdict": "free",
+      "verdictText": "Revise while you walk. No card needed."
+    },
+    {
+      "cueStartsWith": "Second, SlideSpeak",
+      "chapter": "2 of 5",
+      "kicker": "Free · with a real limit",
+      "name": "SlideSpeak",
+      "facts": ["Document in, a genuine editable .PPTX out", "Most AI slide tools trap the result in their own viewer", "100 credits free, 50MB cap — NOT unlimited"],
+      "verdict": "wrong",
+      "verdictText": "Articles calling it unlimited are wrong. Their page says otherwise."
+    },
+    {
+      "cueStartsWith": "Third, Photopea",
+      "chapter": "3 of 5",
+      "kicker": "Free · designers and students",
+      "name": "Photopea",
+      "facts": ["Full Photoshop-class editor in a browser tab", "Opens real .PSD files with layers intact", "No download, no account, no watermark, no export cap"],
+      "verdict": "free",
+      "verdictText": "Runs locally. The only catch is side-panel ads."
+    },
+    {
+      "cueStartsWith": "Fourth, FreeCV",
+      "chapter": "4 of 5",
+      "kicker": "Free · placements",
+      "name": "FreeCV",
+      "facts": ["Rewrites bullets, writes your summary", "Scores your CV against the job description", "No signup, no payment, clean PDF"],
+      "verdict": "free",
+      "verdictText": "For when placement season starts."
+    },
+    {
+      "cueStartsWith": "Fifth, and this is the best one",
+      "chapter": "5 of 5",
+      "kicker": "Free forever · open source",
+      "name": "Upscayl",
+      "facts": ["Old blurry photos, up to 16x larger", "Runs entirely on your own computer", "Open source — no company can ever paywall it"],
+      "verdict": "free",
+      "verdictText": "The one thing to take from this video."
+    }
+  ]
+}

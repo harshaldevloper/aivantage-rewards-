@@ -1,0 +1,75 @@
+{
+  "name": "yt-03-opensource",
+  "scene": "scene-yt.html",
+  "format": "landscape",
+  "palette": "mint",
+  "voice": "en-US-AndrewMultilingualNeural",
+  "rate": "+6%",
+  "keyword": "NONE",
+  "script": "Every free A.I. tool you rely on can be taken away. The company raises prices, or removes the free tier, or just shuts down, and there is nothing you can do about it. This video is about the ones that cannot do that to you, because nobody owns them. Here is how I check. I do not read roundup articles, because they copy each other and the numbers go stale. I open the project's own page and its licence. For open source there is a second test that matters more than any feature list. If the licence is genuinely open, there is no free tier to remove, because there is no company that could remove it. First, Upscayl. It makes old blurry photos sharp, up to sixteen times larger. It is licensed A.G.P.L. three, and it runs entirely on your own machine, so nothing you upload leaves your computer. No account, no credits, no watermark, and no cap on how much you use it. There is a paid cloud version, but it only buys you speed. The output quality is identical. The honest catch is that it uses your own processor, so an old laptop will be slow. Second, Ollama. It runs A.I. language models on your own computer with the internet switched off. No account, no per message cost, nothing sent to a company. The catch here is real and I will not pretend otherwise. You need a reasonably modern machine, and you will have to open a terminal. If those two things are fine, nothing about this can ever be taken away from you. Third, Ultimate Vocal Remover. It pulls a song apart into vocals, drums, bass and everything else. It is M.I.T. licensed with no usage limits at all. The catch is hardware. It really wants an Nvidia graphics card with about eight gigabytes of memory. It will run on a processor alone, but slowly. Fourth, the OpenVINO plugin pack for Audacity. This one is genuinely underexposed. It adds audio super resolution, which rebuilds frequencies that were never recorded in the first place. Point it at an old voicemail or a cassette transfer and it fills in what the original recording never captured. It also does noise removal, stem separation, and transcription. Free, open source, and it runs locally. Here is the pattern worth taking away. Every tool in this video shares one property. Nobody can send you an email saying the free plan is ending, because there is no plan and there is no company. The trade is that you supply the computer and sometimes the patience. That is a much better deal than it sounds, and it is the only kind of free that survives.",
+  "segments": [
+    {
+      "cueStartsWith": "Every free A.I. tool you rely on",
+      "chapter": "The problem",
+      "kicker": "Free tiers get removed",
+      "name": "Nobody can take these away.",
+      "facts": ["Companies raise prices, close free tiers, or shut down", "Open source has no free tier to remove — and no company to remove it"],
+      "verdict": "neutral",
+      "verdictText": "The only kind of free that survives."
+    },
+    {
+      "cueStartsWith": "Here is how I check",
+      "chapter": "Method",
+      "kicker": "The test that matters",
+      "name": "Read the licence.",
+      "facts": ["Numbers come from the project's own page, never a roundup", "If the licence is genuinely open, the free access is permanent"],
+      "verdict": "neutral",
+      "verdictText": "No company means no announcement email."
+    },
+    {
+      "cueStartsWith": "First, Upscayl",
+      "chapter": "1 of 4",
+      "kicker": "Free forever",
+      "name": "Upscayl",
+      "facts": ["Old blurry photos, up to 16x larger", "AGPL-3.0 · runs entirely on your own machine", "No account, no credits, no watermark, no cap"],
+      "verdict": "free",
+      "verdictText": "Paid cloud buys speed only. Output is identical."
+    },
+    {
+      "cueStartsWith": "Second, Ollama",
+      "chapter": "2 of 4",
+      "kicker": "Free forever",
+      "name": "Ollama",
+      "facts": ["Runs AI models with the internet switched off", "No account, no per-message cost, nothing leaves your machine", "Catch: needs a modern computer and a terminal"],
+      "verdict": "free",
+      "verdictText": "Real catch, honestly stated. Then untouchable."
+    },
+    {
+      "cueStartsWith": "Third, Ultimate Vocal Remover",
+      "chapter": "3 of 4",
+      "kicker": "Free forever",
+      "name": "Ultimate Vocal Remover",
+      "facts": ["Splits any song into vocals, drums, bass and the rest", "MIT licensed, no usage limits at all", "Catch: wants an Nvidia GPU with ~8GB. CPU works, slowly"],
+      "verdict": "free",
+      "verdictText": "The hardware is the price. Nothing else is."
+    },
+    {
+      "cueStartsWith": "Fourth, the OpenVINO plugin pack",
+      "chapter": "4 of 4",
+      "kicker": "Free forever · underexposed",
+      "name": "Audacity + OpenVINO",
+      "facts": ["Audio Super Resolution rebuilds frequencies never recorded", "Old voicemails and cassette transfers", "Also noise removal, stem separation, transcription"],
+      "verdict": "free",
+      "verdictText": "The least known tool here and one of the best."
+    },
+    {
+      "cueStartsWith": "Here is the pattern worth taking away",
+      "chapter": "The pattern",
+      "kicker": "Why this list can't rot",
+      "name": "You supply the computer.",
+      "facts": ["No company can email you that the free plan is ending", "The trade is your own hardware and some patience", "A better deal than it sounds"],
+      "verdict": "neutral",
+      "verdictText": "This is the only list here that can't go stale."
+    }
+  ]
+}

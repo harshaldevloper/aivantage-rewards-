@@ -1,0 +1,69 @@
+{
+  "name": "c05-cutout-yt",
+  "scene": "scene-mascot.html",
+  "keyword": "CUTOUT",
+  "palette": "violet",
+  "voice": "en-US-AndrewMultilingualNeural",
+  "rate": "+8%",
+  "script": "There's a free A.I. that cuts the background out of your product photos and exports them with no watermark at all. No signup wall. No blurry preview. No downscaled export. One honest warning though, the commercial licence is on the paid plan, so check that before you sell. It's called Pixelcut. Link is in the description.",
+  "highlight": [
+    "free",
+    "cutout",
+    "watermark"
+  ],
+  "hot": [
+    "no",
+    "not",
+    "nothing",
+    "only",
+    "catch",
+    "public"
+  ],
+  "stackPhrases": [
+    "No signup wall",
+    "No blurry preview",
+    "No downscaled export"
+  ],
+  "demo": {
+    "act": "edit",
+    "title": "background remover",
+    "layers": [
+      "Subject detected",
+      "Background cut",
+      "Exported clean"
+    ],
+    "start": 2.6,
+    "end": 12
+  },
+  "beats": [
+    {
+      "cue": 0,
+      "pose": "present",
+      "expr": "wide"
+    },
+    {
+      "cue": 1,
+      "pose": "point",
+      "expr": "neutral"
+    },
+    {
+      "cue": 4,
+      "pose": "shrug",
+      "expr": "sly"
+    },
+    {
+      "cue": 5,
+      "pose": "cheer",
+      "expr": "happy"
+    },
+    {
+      "cue": 6,
+      "pose": "point",
+      "expr": "happy"
+    }
+  ],
+  "reveal": {
+    "name": "Pixelcut",
+    "url": "pixelcut.ai"
+  }
+}

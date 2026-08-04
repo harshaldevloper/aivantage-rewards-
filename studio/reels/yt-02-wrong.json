@@ -1,0 +1,84 @@
+{
+  "name": "yt-02-wrong",
+  "scene": "scene-yt.html",
+  "format": "landscape",
+  "palette": "ember",
+  "voice": "en-US-AndrewMultilingualNeural",
+  "rate": "+6%",
+  "keyword": "NONE",
+  "script": "I checked twenty free A.I. tools against their own pricing pages this week. Five of the most recommended ones are not what everybody says they are. One of them cannot legally be used for the thing every article recommends it for. Here is how I check. I do not read roundup articles, because they copy each other and the numbers rot quietly. I open the company's own pricing page and read what is actually written on it. That is the entire method, and it is the reason this list disagrees with every other one. First, Photoroom. Every article aimed at Etsy sellers recommends it for product photos. But Photoroom's own help centre says, in their words, you cannot use a free account for commercial purposes. Free output is licensed for personal, non-commercial use only. So the single thing it is most recommended for is the one thing the free plan forbids. Second, Pebblely. Search for free product photography A.I. and you will be told it gives you forty free images a month. Open their pricing page. There is no free column at all. The cheapest plan is nine dollars. That number is not real any more, and it is still being repeated everywhere. Third, remove dot b.g. Famous, and genuinely useful, but the free tier is not what people think. Their own F.A.Q. says credits are what enable full resolution cutouts, and that preview images are always free. So free gives you a low resolution preview. The actual product costs credits. Fourth, Canva. Almost every roundup still says you get fifty lifetime Magic Write uses. Canva's own page now says something completely different. Two hundred uses of standard A.I. tools per month, or twenty uses of premium ones, resetting on the first of each month. The old number is stale and nobody updated it. Fifth, Pokecut. Marketed everywhere as free, no watermark, no signup. Look at their pricing page and no watermark is listed as a paid feature. When a company sells no watermark as a benefit, the free tier watermarks. That is the tell, and it works on almost every tool in this category. Here is the pattern worth taking away. The tools that get recommended the most are the ones with the biggest marketing budgets, not the best free tiers. Roundup articles copy each other and almost nobody re-checks. Ten minutes on a pricing page beats every list on the internet, including this one. Go and check.",
+  "segments": [
+    {
+      "cueStartsWith": "I checked twenty free",
+      "chapter": "The claim",
+      "kicker": "Checked this week",
+      "name": "5 tools. 5 wrong answers.",
+      "facts": ["Every claim checked against the vendor's own pricing page", "One cannot legally be used for what it's recommended for"],
+      "verdict": "neutral",
+      "verdictText": "Roundup articles copy each other. The numbers rot."
+    },
+    {
+      "cueStartsWith": "Here is how I check",
+      "chapter": "Method",
+      "kicker": "Why this list disagrees",
+      "name": "No roundups. Ever.",
+      "facts": ["Numbers come from the company's own pricing page", "If a limit can't be confirmed, it isn't in the video"],
+      "verdict": "neutral",
+      "verdictText": "Ten minutes on a pricing page beats every list online."
+    },
+    {
+      "cueStartsWith": "First, Photoroom",
+      "chapter": "1 of 5",
+      "kicker": "Recommended for the one thing it forbids",
+      "name": "Photoroom",
+      "facts": ["Recommended everywhere for Etsy and product photos", "Their help centre: \"You cannot use a free account for commercial purposes\"", "Free output is licensed personal, non-commercial only"],
+      "verdict": "gone",
+      "verdictText": "Free plan forbids exactly what it's recommended for."
+    },
+    {
+      "cueStartsWith": "Second, Pebblely",
+      "chapter": "2 of 5",
+      "kicker": "The number does not exist",
+      "name": "Pebblely",
+      "facts": ["Every roundup says \"40 free images a month\"", "Their pricing page has no free column at all", "Cheapest plan is $9"],
+      "verdict": "gone",
+      "verdictText": "There is no free tier. The figure is simply stale."
+    },
+    {
+      "cueStartsWith": "Third, remove",
+      "chapter": "3 of 5",
+      "kicker": "Free, but not the way you think",
+      "name": "remove.bg",
+      "facts": ["Their FAQ: credits enable full-resolution cutouts", "\"Preview images are always free\"", "Free = low-res preview. Full res costs credits"],
+      "verdict": "wrong",
+      "verdictText": "Genuinely useful — just not free at full resolution."
+    },
+    {
+      "cueStartsWith": "Fourth, Canva",
+      "chapter": "4 of 5",
+      "kicker": "Everyone quotes a dead number",
+      "name": "Canva",
+      "facts": ["Roundups still say \"50 lifetime Magic Write uses\"", "Canva's page now says 200 Standard AI uses per month", "Or 20 Premium uses. Resets on the 1st"],
+      "verdict": "wrong",
+      "verdictText": "The real allowance is better — and monthly, not lifetime."
+    },
+    {
+      "cueStartsWith": "Fifth, Pokecut",
+      "chapter": "5 of 5",
+      "kicker": "The tell that works everywhere",
+      "name": "Pokecut",
+      "facts": ["Marketed as \"free, no watermark, no signup\"", "Their pricing lists \"No watermark\" as a PAID feature", "If no-watermark is sold as a benefit, free watermarks"],
+      "verdict": "gone",
+      "verdictText": "Use this tell on any tool. It almost always holds."
+    },
+    {
+      "cueStartsWith": "Here is the pattern worth taking away",
+      "chapter": "The pattern",
+      "kicker": "What to do about it",
+      "name": "Check it yourself.",
+      "facts": ["Most-recommended usually means biggest marketing budget", "Roundups copy each other and nobody re-checks", "Ten minutes on a pricing page beats every list — including this one"],
+      "verdict": "neutral",
+      "verdictText": "Don't trust me either. Open the page."
+    }
+  ]
+}

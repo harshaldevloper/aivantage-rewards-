@@ -1,0 +1,19 @@
+# Never commit credentials. The studio folder this repo borrows from contains a
+# Google OAuth client_secret.json -- keep that class of file out permanently.
+client_secret.json
+oauth*.json
+*credentials*.json
+.env
+.env.*
+!.env.example
+
+node_modules/
+.venv/
+__pycache__/
+
+# Render output: large, regenerated every run, published via release assets.
+out/
+frames/
+*.mp4
+*.mp3
+*.wav

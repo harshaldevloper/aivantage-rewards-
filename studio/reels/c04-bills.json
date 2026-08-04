@@ -1,0 +1,64 @@
+{
+  "name": "c04-bills",
+  "scene": "scene-mascot.html",
+  "keyword": "BILLS",
+  "palette": "mint",
+  "voice": "en-US-AndrewMultilingualNeural",
+  "rate": "+8%",
+  "script": "There's a free invoicing tool that lets you send five hundred invoices a year, forever. Not a trial. No card. No monthly fee. No expiry date. Two users and three projects on the free plan, and your invoices carry their small branding. That's the entire trade. Type BILLS in the comments.",
+  "highlight": [
+    "free",
+    "five",
+    "hundred",
+    "forever",
+    "bills"
+  ],
+  "hot": [
+    "no",
+    "not",
+    "nothing",
+    "only",
+    "catch",
+    "public"
+  ],
+  "stackPhrases": [
+    "No card",
+    "No monthly fee",
+    "No expiry date"
+  ],
+  "sub": "THE DM ONLY GOES TO FOLLOWERS",
+  "demo": {
+    "act": "slides",
+    "title": "invoicing",
+    "outputs": 4,
+    "start": 2.6,
+    "end": 11.5
+  },
+  "beats": [
+    {
+      "cue": 0,
+      "pose": "present",
+      "expr": "wide"
+    },
+    {
+      "cue": 1,
+      "pose": "point",
+      "expr": "neutral"
+    },
+    {
+      "cue": 4,
+      "pose": "shrug",
+      "expr": "sly"
+    },
+    {
+      "cue": 5,
+      "pose": "cheer",
+      "expr": "happy"
+    },
+    {
+      "cue": 6,
+      "pose": "point",
+      "expr": "happy"
+    }
+  ]
+}

@@ -1,0 +1,93 @@
+{
+  "name": "yt-01-freetier",
+  "scene": "scene-yt.html",
+  "format": "landscape",
+  "palette": "cinema",
+  "voice": "en-US-AndrewMultilingualNeural",
+  "rate": "+6%",
+  "keyword": "NONE",
+  "script": "Three A.I. tools that everyone says killed their free plans. I checked all of them on their own pricing pages. One of them is genuinely gone. One of them is still completely free, and almost every article about it is wrong. Here is how I do this. I don't read roundup articles, because they recycle each other and go stale within weeks. I open the tool's own pricing page and read what is actually written there. That is the whole method. First, Cody, from Sourcegraph. This one is real. Open Sourcegraph's pricing page today and there are no individual plans at all. It is enterprise only, sixteen thousand dollars. If you were a solo developer relying on Cody, that tool is gone for you. Not reduced. Gone. Second, Cursor. You will find a lot of posts saying Cursor killed its free tier. That is not what happened, and the difference matters. Cursor removed its fourteen day Pro trial. But open the pricing page right now and there is still a plan called Hobby, and it still costs zero dollars. Cursor did not take away free access. It took away the free sample of the paid tier. If you stopped using it because of a headline, you stopped for no reason. So that is what changed. Now here is what is still genuinely free, all checked this week. A full Photoshop class editor that runs inside a browser tab. No download, no account, no watermark, and no export limit. It opens real P.S.D. files with the layers intact, and it runs on your own machine, so your images never get uploaded anywhere. The catch, and there is one, is that the free version shows ads in a side panel. That is the entire catch. Kling gives you sixty six credits every twenty four hours for A.I. video. That is roughly six clips a day, and it resets at midnight. Free output carries a visible watermark, so it is no good for client work. But for learning what A.I. video can actually do, a daily refill beats a one time trial every single time. Google renamed NotebookLM to Gemini Notebook in July. Same product, and the free tier survived. A hundred notebooks, fifty sources in each one, and three audio overviews a day. Upload your notes and you get two voices discussing them like a podcast. And if you want something that nothing can ever paywall, Ollama runs A.I. models entirely on your own computer. No account, no internet needed, no cost per message. It is open source, so there is no free tier to remove. The honest catch is that it wants a decent machine, and you will have to touch a terminal. Here is the pattern worth noticing. The tools that took things away were the venture funded ones with a paid tier to protect. The ones that stayed free were either ad supported or open source. That is not a coincidence, and it is a decent rule for guessing which tool will still be free next year. Every free tier in this video was checked on the tool's own pricing page this week. Links are in the description.",
+  "segments": [
+    {
+      "cueStartsWith": "Three A.I. tools that everyone",
+      "chapter": "The claim",
+      "kicker": "Checked this week",
+      "name": "3 tools. 1 correction.",
+      "facts": ["One free tier is genuinely gone", "One is still free — and the internet has it wrong"],
+      "verdict": "neutral",
+      "verdictText": "Every claim checked on the tool's own pricing page."
+    },
+    {
+      "cueStartsWith": "Here is how I do this",
+      "chapter": "Method",
+      "kicker": "Why this list is different",
+      "name": "No roundup articles.",
+      "facts": ["Roundups recycle each other and go stale in weeks", "Every number here comes from the vendor's own pricing page"],
+      "verdict": "neutral",
+      "verdictText": "If a limit could not be confirmed, it is not in this video."
+    },
+    {
+      "cueStartsWith": "First, Cody, from Sourcegraph",
+      "chapter": "Tool 1 of 6",
+      "kicker": "Free tier removed",
+      "name": "Cody",
+      "facts": ["Sourcegraph's pricing page lists no individual plans", "Enterprise only — $16,000", "Solo developers have no path back in"],
+      "verdict": "gone",
+      "verdictText": "Genuinely gone. Not reduced — removed."
+    },
+    {
+      "cueStartsWith": "Second, Cursor",
+      "chapter": "Tool 2 of 6",
+      "kicker": "Widely misreported",
+      "name": "Cursor",
+      "facts": ["The 14-day Pro trial was removed — that part is true", "But the Hobby plan is still listed at $0", "Free access was never taken away"],
+      "verdict": "wrong",
+      "verdictText": "Still free. The trial went, not the tier."
+    },
+    {
+      "cueStartsWith": "A full Photoshop class editor",
+      "chapter": "Tool 3 of 6",
+      "kicker": "Still free",
+      "name": "Photopea",
+      "facts": ["No download, no account, no watermark, no export cap", "Opens real .PSD files with layers intact", "Runs on your machine — nothing is uploaded"],
+      "verdict": "free",
+      "verdictText": "Free. The only catch is ads in a side panel."
+    },
+    {
+      "cueStartsWith": "Kling gives you sixty six",
+      "chapter": "Tool 4 of 6",
+      "kicker": "Still free",
+      "name": "Kling",
+      "facts": ["66 credits every 24 hours — about 6 clips a day", "Resets at midnight, no rollover", "Free output is watermarked"],
+      "verdict": "free",
+      "verdictText": "Free daily. Watermark rules out client work."
+    },
+    {
+      "cueStartsWith": "Google renamed NotebookLM",
+      "chapter": "Tool 5 of 6",
+      "kicker": "Still free",
+      "name": "Gemini Notebook",
+      "facts": ["Renamed from NotebookLM in July — same product", "100 notebooks, 50 sources each", "3 audio overviews per day"],
+      "verdict": "free",
+      "verdictText": "Free tier survived the rename intact."
+    },
+    {
+      "cueStartsWith": "And if you want something that nothing",
+      "chapter": "Tool 6 of 6",
+      "kicker": "Free forever",
+      "name": "Ollama",
+      "facts": ["Runs models entirely on your own computer", "No account, no internet, no cost per message", "Open source — there is no tier to remove"],
+      "verdict": "free",
+      "verdictText": "Nothing can paywall this. Needs a decent machine."
+    },
+    {
+      "cueStartsWith": "Here is the pattern worth noticing",
+      "chapter": "The pattern",
+      "kicker": "What this predicts",
+      "name": "Who takes things away.",
+      "facts": ["Removed: venture-funded tools with a paid tier to protect", "Survived: ad-supported and open source", "A decent rule for guessing what stays free next year"],
+      "verdict": "neutral",
+      "verdictText": "Follow the funding, not the marketing."
+    }
+  ]
+}

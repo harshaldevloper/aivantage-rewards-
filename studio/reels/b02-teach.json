@@ -1,0 +1,62 @@
+{
+  "name": "b02-teach",
+  "scene": "scene-mascot.html",
+  "keyword": "TEACH",
+  "palette": "ember",
+  "voice": "en-US-AndrewMultilingualNeural",
+  "rate": "+8%",
+  "script": "Teachers, there's a free A.I. with eighty tools built only for teaching. It writes your lesson plan in about nine seconds. No prep. No marking pile. No Sunday night panic. Type TEACH in the comments and I'll send it.",
+  "highlight": [
+    "eighty",
+    "free",
+    "teach",
+    "nine"
+  ],
+  "hot": [
+    "no",
+    "not",
+    "nothing",
+    "only",
+    "followers"
+  ],
+  "stackPhrases": [
+    "No prep",
+    "No marking pile",
+    "No Sunday night panic"
+  ],
+  "sub": "NOT FOLLOWING? IT CAN'T REACH YOU",
+  "demo": {
+    "act": "slides",
+    "title": "lesson planner",
+    "outputs": 4,
+    "start": 2.6,
+    "end": 11
+  },
+  "beats": [
+    {
+      "cue": 0,
+      "pose": "present",
+      "expr": "wide"
+    },
+    {
+      "cue": 1,
+      "pose": "point",
+      "expr": "neutral"
+    },
+    {
+      "cue": 4,
+      "pose": "shrug",
+      "expr": "sly"
+    },
+    {
+      "cue": 5,
+      "pose": "cheer",
+      "expr": "happy"
+    },
+    {
+      "cue": 6,
+      "pose": "point",
+      "expr": "happy"
+    }
+  ]
+}

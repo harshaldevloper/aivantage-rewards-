@@ -1,0 +1,177 @@
+<!doctype html>
+<meta charset="utf-8">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { width:1080px; height:1920px; overflow:hidden; background:#05060a; }
+  body { font-family:'Arial Black','Segoe UI',system-ui,sans-serif; }
+  #stage { position:relative; width:1080px; height:1920px; overflow:hidden; }
+
+  .blob { position:absolute; border-radius:50%; filter:blur(120px); will-change:transform; }
+  #b1 { width:900px; height:900px; opacity:.55; }
+  #b2 { width:820px; height:820px; opacity:.45; }
+  #b3 { width:700px; height:700px; opacity:.40; }
+  #b4 { width:600px; height:600px; opacity:.35; }
+
+  #vignette { position:absolute; inset:0;
+    background:radial-gradient(ellipse 70% 55% at 50% 45%, transparent 0%, rgba(0,0,0,.55) 70%, rgba(0,0,0,.9) 100%); }
+  #grain { position:absolute; inset:-200px; opacity:.16; mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+  .bracket { position:absolute; width:110px; height:110px; border:7px solid rgba(255,255,255,.22); }
+  #tl { top:190px; left:80px; border-right:0; border-bottom:0; }
+  #tr { top:190px; right:80px; border-left:0; border-bottom:0; }
+  #bl { bottom:330px; left:80px; border-right:0; border-top:0; }
+  #br { bottom:330px; right:80px; border-left:0; border-top:0; }
+
+  #caption { position:absolute; left:0; right:0; top:50%; transform:translateY(-50%);
+    padding:0 90px; text-align:center; }
+  .word { display:inline-block; font-size:var(--fs,118px); line-height:1.06; font-weight:900;
+    letter-spacing:-.035em; color:#fff; text-transform:uppercase;
+    text-shadow:0 10px 60px rgba(0,0,0,.75); margin:0 .12em; will-change:transform,opacity; }
+
+  #stack { position:absolute; left:0; right:0; top:50%; transform:translateY(-50%);
+    text-align:center; display:none; padding:0 80px; }
+  .row { font-size:104px; font-weight:900; letter-spacing:-.03em; color:#fff;
+    text-transform:uppercase; line-height:1.22; }
+
+  #cta { position:absolute; left:0; right:0; bottom:500px; text-align:center; opacity:0;
+    padding:0 70px; }
+  #pill { display:inline-block; padding:32px 68px; border-radius:999px;
+    box-shadow:0 30px 90px rgba(34,211,238,.42), inset 0 2px 0 rgba(255,255,255,.35); }
+  #pill span { font-size:72px; font-weight:900; color:#04070d; letter-spacing:.01em; }
+  #sub { margin-top:30px; font-size:36px; font-weight:900; color:#fff;
+    letter-spacing:.02em; line-height:1.25; text-shadow:0 6px 30px rgba(0,0,0,.8); }
+
+  #bar { position:absolute; left:0; top:0; height:9px; }
+</style>
+
+<div id="stage">
+  <div class="blob" id="b1"></div><div class="blob" id="b2"></div>
+  <div class="blob" id="b3"></div><div class="blob" id="b4"></div>
+  <div id="vignette"></div><div id="grain"></div>
+  <div class="bracket" id="tl"></div><div class="bracket" id="tr"></div>
+  <div class="bracket" id="bl"></div><div class="bracket" id="br"></div>
+  <div id="caption"></div>
+  <div id="stack"></div>
+  <div id="cta"><div id="pill"><span id="pilltext"></span></div><div id="sub"></div></div>
+  <div id="bar"></div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
+const c01=x=>clamp(x,0,1);
+const outCubic=x=>1-Math.pow(1-x,3);
+const outBack=x=>{const c1=1.70158,c3=c1+1;return 1+c3*Math.pow(x-1,3)+c1*Math.pow(x-1,2);};
+
+let CFG=null, CUES=[], CHUNKS=[], HL=new Set(), HOT=new Set(), STACK=[], DUR=0;
+
+// Palettes keep every reel on-brand while stopping the feed looking identical day to day.
+const PALETTES = {
+  cinema: { blobs:['#7c3aed','#06b6d4','#ec4899','#2563eb'], hl:'#22d3ee', hot:'#fb7185',
+            pill:'linear-gradient(100deg,#22d3ee,#7c3aed)', bar:'linear-gradient(90deg,#22d3ee,#7c3aed,#ec4899)' },
+  ember:  { blobs:['#f59e0b','#ef4444','#ec4899','#7c2d12'], hl:'#fbbf24', hot:'#fb7185',
+            pill:'linear-gradient(100deg,#fbbf24,#ef4444)', bar:'linear-gradient(90deg,#fbbf24,#ef4444,#ec4899)' },
+  mint:   { blobs:['#10b981','#06b6d4','#3b82f6','#065f46'], hl:'#34d399', hot:'#fbbf24',
+            pill:'linear-gradient(100deg,#34d399,#06b6d4)', bar:'linear-gradient(90deg,#34d399,#06b6d4,#3b82f6)' },
+  violet: { blobs:['#a855f7','#6366f1','#ec4899','#1e1b4b'], hl:'#c084fc', hot:'#f472b6',
+            pill:'linear-gradient(100deg,#c084fc,#6366f1)', bar:'linear-gradient(90deg,#c084fc,#6366f1,#ec4899)' },
+};
+
+window.init = function(cfg){
+  CFG = cfg;
+  CUES = cfg.cues;
+  DUR = cfg.duration;
+  HL  = new Set((cfg.highlight||[]).map(s=>s.toUpperCase()));
+  HOT = new Set((cfg.hot||[]).map(s=>s.toUpperCase()));
+  STACK = cfg.stackCues || [];
+
+  const p = PALETTES[cfg.palette] || PALETTES.cinema;
+  ['b1','b2','b3','b4'].forEach((id,i)=>{ $(id).style.background = p.blobs[i]; });
+  $('pill').style.background = p.pill;
+  $('bar').style.background  = p.bar;
+  document.documentElement.style.setProperty('--hl', p.hl);
+  document.documentElement.style.setProperty('--hot', p.hot);
+  $('pilltext').textContent = 'COMMENT: ' + cfg.keyword;
+  $('sub').textContent = cfg.sub || "FOLLOW FIRST OR THE DM WON'T SEND";
+
+  // chunk each non-stacked cue into <=3-word groups, time-sliced across the cue
+  CHUNKS = [];
+  CUES.forEach((c,ci) => {
+    if (STACK.includes(ci)) return;
+    const words = c[2].split(/\s+/).filter(Boolean);
+    const nGroups = Math.ceil(words.length/3);
+    const per = Math.ceil(words.length/nGroups);
+    const groups = [];
+    for (let i=0;i<words.length;i+=per) groups.push(words.slice(i,i+per));
+    const slice = (c[1]-c[0]) / groups.length;
+    groups.forEach((g,gi)=>CHUNKS.push({ s:c[0]+gi*slice, e:c[0]+(gi+1)*slice, words:g }));
+  });
+  seek(0);
+};
+
+function colorFor(w){
+  const clean = w.replace(/[^A-Za-z0-9']/g,'').toUpperCase();
+  if (HL.has(clean))  return 'color:var(--hl);text-shadow:0 0 70px rgba(34,211,238,.6),0 10px 40px rgba(0,0,0,.7);';
+  if (HOT.has(clean)) return 'color:var(--hot);text-shadow:0 0 70px rgba(251,113,133,.55),0 10px 40px rgba(0,0,0,.7);';
+  return '';
+}
+
+function seek(t){
+  if(!CFG) return;
+
+  const B=[[$('b1'),0.11,-90,430,340],[$('b2'),0.083,120,700,980],
+           [$('b3'),0.13,40,240,1380],[$('b4'),0.067,200,820,1600]];
+  B.forEach(([el,sp,ph,cx,cy],i)=>{
+    const a=t*sp*Math.PI*2+ph;
+    const x=cx+Math.cos(a)*230-el.offsetWidth/2;
+    const y=cy+Math.sin(a*0.77+i)*190-el.offsetHeight/2;
+    el.style.transform=`translate(${x}px,${y}px) scale(${1+Math.sin(a*0.6)*0.13})`;
+  });
+
+  const f=Math.floor(t*30);
+  $('grain').style.transform=`translate(${(f*61)%180-90}px,${(f*97)%180-90}px)`;
+  const bs=1+Math.sin(t*1.5)*0.022;
+  ['tl','tr','bl','br'].forEach(id=>{ $(id).style.transform=`scale(${bs})`; });
+  $('bar').style.width=(c01(t/DUR)*1080)+'px';
+
+  const ctaStart = CFG.ctaCue!=null ? CUES[CFG.ctaCue][0] : DUR;
+  const ctaPhase = t>=ctaStart;
+  $('caption').style.top = ctaPhase ? '31%' : '50%';
+  $('caption').style.setProperty('--fs', ctaPhase ? '92px' : '118px');
+
+  const stackStart = STACK.length ? CUES[STACK[0]][0]-0.12 : Infinity;
+  const stackEnd   = STACK.length ? CUES[STACK[STACK.length-1]][1] : -Infinity;
+  const inStack = t>=stackStart && t<stackEnd;
+  $('stack').style.display   = inStack ? 'block' : 'none';
+  $('caption').style.display = inStack ? 'none' : 'block';
+
+  if (inStack){
+    $('stack').innerHTML = STACK.map(ci=>{
+      const cu=CUES[ci];
+      const p=outBack(c01((t-cu[0])/0.34));
+      if(p<=0) return '';
+      const words=cu[2].split(/\s+/);
+      const html=words.map(w=>`<span style="${colorFor(w)}">${w}</span>`).join(' ');
+      return `<div class="row" style="opacity:${c01(p)};transform:translateY(${(1-p)*46}px) scale(${0.9+p*0.1})">${html}</div>`;
+    }).join('');
+  } else {
+    const ch=CHUNKS.find(c=>t>=c.s&&t<c.e);
+    $('caption').innerHTML = !ch ? '' : ch.words.map((w,i)=>{
+      const d=i*0.052;
+      const p=outBack(c01((t-ch.s-d)/0.30));
+      const o=c01((t-ch.s-d)/0.16);
+      return `<span class="word" style="${colorFor(w)}opacity:${o};filter:blur(${(1-c01(p))*9}px);`+
+             `transform:translateY(${(1-p)*54}px) scale(${0.86+p*0.14})">${w}</span>`;
+    }).join(' ');
+  }
+
+  if (ctaPhase){
+    const p=outCubic(c01((t-ctaStart)/0.5));
+    const pulse=1+Math.sin((t-ctaStart)*7.2)*0.028;
+    $('cta').style.opacity=p;
+    $('cta').style.transform=`translateY(${(1-p)*60}px) scale(${(0.9+p*0.1)*pulse})`;
+  } else { $('cta').style.opacity=0; }
+}
+window.seek=seek;
+</script>
