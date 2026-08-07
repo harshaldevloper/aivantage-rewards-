@@ -81,17 +81,67 @@ python approve.py status
 
 ---
 
-## 6. Instagram auto-publish — deliberately not built yet
+## 6. Instagram auto-publish (30–45 min, do it last)
 
-Publishing needs the Instagram Graph API, which requires a Business/Creator
-account linked to a Facebook Page plus a Meta app with
-`instagram_content_publish`. That's a 30–45 minute setup and it's worth doing
-**after** you've confirmed the approval flow feels right — otherwise you're
-debugging two unfamiliar systems at once.
+`publish.py` and the `Publish approved clips` workflow are built. What's left is
+the Meta side, which is the slow part. **Do this only after step 4 works** —
+otherwise you're debugging two unfamiliar systems at once.
 
-Until then the loop is: approve in Telegram → download the release asset →
-post manually. That keeps a human on the publish button, which is also the
-safest place to be while the account is young.
+Nothing here weakens the approval gate. `publish.py` refuses any clip that is
+not `status="approved"`, and only your tap in Telegram writes that status.
+
+### 6a. Get the Instagram side eligible
+
+1. Instagram app → **Settings → Account type** → switch to **Business** (or
+   Creator). A personal account cannot use the publishing API at all.
+2. Link it to a **Facebook Page**. Create an empty one if you don't have one —
+   it never needs a post, it just has to exist.
+
+### 6b. Create the Meta app
+
+At [developers.facebook.com](https://developers.facebook.com) → **My Apps →
+Create App** → type **Business**. Add the **Instagram** product.
+
+Request these permissions:
+
+| Permission | Why |
+|---|---|
+| `instagram_basic` | Read the account |
+| `instagram_content_publish` | **The one that actually posts.** Without it every call 403s. |
+| `pages_show_list` | Find the linked Page |
+| `pages_read_engagement` | Resolve the Page → IG account link |
+
+> Meta reshuffles this dashboard often. If the labels don't match, search their
+> docs for "Instagram Content Publishing API" — the permission names above are
+> stable even when the UI isn't.
+
+### 6c. Get the two values you need
+
+- **`IG_USER_ID`** — the numeric Instagram *Business account* id, not your
+  `@handle`. The Graph API Explorer shows it via
+  `me/accounts?fields=instagram_business_account`.
+- **`IG_ACCESS_TOKEN`** — a **long-lived** token. The default one expires in an
+  hour; exchange it for the ~60-day version. A short-lived token here works when
+  you test it and fails silently overnight, which is a miserable thing to debug.
+
+Add both as repository secrets, same place as the Telegram ones.
+
+> **Diary note:** long-lived tokens still expire in ~60 days. When publishing
+> starts failing with `code 190`, that's all this is — generate a new token and
+> update the secret. `publish.py` says so explicitly in the error.
+
+### 6d. Prove it before trusting it
+
+```bash
+python publish.py --dry-run
+```
+
+Runs with no credentials and touches nothing — it just lists which approved
+clips would post. Then from **Actions → Publish approved clips → Run workflow**,
+tick **dry_run** for a cloud dry run, and only untick it once the list looks
+right.
+
+After that it runs itself at 10:00 and 18:00 IST, publishing at most 3 per run.
 
 ---
 

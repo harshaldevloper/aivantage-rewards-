@@ -1,0 +1,67 @@
+name: Publish approved clips
+
+# Posts clips you approved in Telegram to Instagram as Reels, then commits the
+# published markers back so nothing is ever posted twice.
+#
+# WHY THIS IS SCHEDULED AND STILL NOT A CONTENT FARM
+# The schedule only decides *when* to check. What is eligible was decided by
+# your thumb -- publish.py refuses anything that is not status="approved", and
+# that status is only ever written by a tap in Telegram. If you approve nothing,
+# this runs, finds nothing, and exits.
+#
+# Runs at 10:00 and 18:00 IST. Instagram allows 25 posts per rolling 24h and
+# publish.py checks the remaining quota before each batch.
+on:
+  schedule:
+    - cron: "30 4 * * *"   # 10:00 IST
+    - cron: "30 12 * * *"  # 18:00 IST
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "List what would post, change nothing"
+        type: boolean
+        default: false
+      limit:
+        description: "Max clips to publish this run"
+        default: "3"
+
+permissions:
+  contents: write
+
+concurrency:
+  # Two overlapping runs could both read the same queue before either commits
+  # its published markers, and the same reel would go up twice.
+  group: instagram-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Publish
+        env:
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
+          IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+        run: |
+          python publish.py \
+            ${{ inputs.dry_run && '--dry-run' || '' }} \
+            --limit ${{ inputs.limit || 3 }}
+
+      - name: Record what went live
+        # Skipped on a dry run because nothing changed.
+        if: ${{ !inputs.dry_run }}
+        run: |
+          if [ -n "$(git status --porcelain state/)" ]; then
+            git config user.name  "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add state/
+            git commit -m "chore: record published clips"
+            git pull --rebase --autostash
+            git push
+          fi

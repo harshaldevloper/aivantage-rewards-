@@ -20,7 +20,10 @@ Content Rewards public feed
    Telegram: 5 clips, Approve / Reject ..... nothing posts without a tap
         │  approve.py poll, every 15 min
         ▼
-   Approved queue → publish
+   Approved queue
+        │  publish.py — Instagram Graph API, 10:00 and 18:00 IST
+        ▼
+   Live on the account ..................... published markers committed back
 ```
 
 ## Why it's shaped this way
@@ -49,10 +52,12 @@ workflows. No database, nothing to host, full history for free.
 |---|---|
 | `watch.py` | Pulls campaigns, filters, ranks, sends the digest |
 | `approve.py` | `send` / `poll` / `status` — the approval gate |
+| `publish.py` | Posts approved clips to Instagram; `--dry-run` is safe |
 | `studio/` | Reel renderer: edge-tts → Puppeteer frames → ffmpeg |
 | `.github/workflows/watch.yml` | Daily digest |
 | `.github/workflows/render.yml` | Cloud render + review batch (manual trigger) |
 | `.github/workflows/approve.yml` | Drains taps every 15 min |
+| `.github/workflows/publish.yml` | Publishes approved clips, twice daily |
 | `state/` | `seen.json`, `queue.json` — committed by CI |
 
 ## Tuning the filter

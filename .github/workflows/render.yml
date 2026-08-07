@@ -34,8 +34,14 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install ffmpeg
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+      - name: Install ffmpeg and fonts
+        # fonts-noto-devanagari is what makes Hindi captions render. Without it
+        # the runner has no Devanagari glyphs, Chromium draws tofu boxes (▯▯▯),
+        # and the voiceover still sounds perfect -- so the failure is invisible
+        # until you watch the MP4.
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg fonts-noto-core fonts-noto-devanagari
 
       - name: Install edge-tts
         run: pip install --quiet edge-tts
