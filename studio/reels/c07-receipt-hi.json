@@ -1,0 +1,67 @@
+{
+  "name": "c07-receipt-hi",
+  "scene": "scene-mascot.html",
+  "keyword": "RECEIPT",
+  "palette": "mint",
+  "voice": "hi-IN-MadhurNeural",
+  "rate": "+8%",
+  "script": "एक फ्री ऐप है जो आपकी रसीदें खुद पढ़ लेता है। बस फोटो खींचिए, और तारीख, रकम और दुकान का नाम अपने आप निकल आता है। ना स्प्रेडशीट। ना टाइपिंग। ना कागज़ों का ढेर। गाड़ी का किलोमीटर भी अपने आप गिन लेता है। कैच ये है कि हर महीने सिर्फ़ बीस स्कैन मिलते हैं। कमेंट में RECEIPT लिखिए, फ़ॉलो करना मत भूलिए।",
+  "highlight": [
+    "फ्री",
+    "रसीदें",
+    "बीस",
+    "receipt"
+  ],
+  "hot": [
+    "ना",
+    "सिर्फ़",
+    "कैच",
+    "खुद"
+  ],
+  "stackPhrases": [
+    "ना स्प्रेडशीट",
+    "ना टाइपिंग",
+    "ना कागज़ों का ढेर"
+  ],
+  "sub": "फ़ॉलो नहीं किया तो DM नहीं आएगा",
+  "demo": {
+    "act": "process",
+    "title": "expense scanner",
+    "inputIcon": "IMG",
+    "input": "receipt.jpg",
+    "action": "Reading receipt",
+    "outputs": 3,
+    "cols": 3,
+    "outputLabel": "Field",
+    "tileHeight": 130,
+    "start": 2.6,
+    "end": 11.5
+  },
+  "beats": [
+    {
+      "cue": 0,
+      "pose": "present",
+      "expr": "wide"
+    },
+    {
+      "cue": 1,
+      "pose": "point",
+      "expr": "neutral"
+    },
+    {
+      "cue": 4,
+      "pose": "shrug",
+      "expr": "sly"
+    },
+    {
+      "cue": 5,
+      "pose": "cheer",
+      "expr": "happy"
+    },
+    {
+      "cue": 6,
+      "pose": "point",
+      "expr": "happy"
+    }
+  ]
+}

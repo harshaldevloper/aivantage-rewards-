@@ -1,0 +1,68 @@
+{
+  "name": "c07-receipt",
+  "scene": "scene-mascot.html",
+  "keyword": "RECEIPT",
+  "palette": "mint",
+  "voice": "en-US-AndrewMultilingualNeural",
+  "rate": "+8%",
+  "script": "There's a free expense app that reads your receipts for you. Photograph one, and the A.I. pulls out the date, the amount and the shop by itself. No spreadsheet. No typing it in. No shoebox of paper. It even tracks your mileage by G.P.S. The catch is twenty scans per person each month. Say RECEIPT and I'll send it over. Follow so it actually gets to you.",
+  "highlight": [
+    "free",
+    "receipts",
+    "twenty",
+    "receipt"
+  ],
+  "hot": [
+    "no",
+    "not",
+    "nothing",
+    "only",
+    "catch"
+  ],
+  "stackPhrases": [
+    "No spreadsheet",
+    "No typing it in",
+    "No shoebox of paper"
+  ],
+  "sub": "FOLLOWERS ONLY — THAT'S HOW IT SENDS",
+  "demo": {
+    "act": "process",
+    "title": "expense scanner",
+    "inputIcon": "IMG",
+    "input": "receipt.jpg",
+    "action": "Reading receipt",
+    "outputs": 3,
+    "cols": 3,
+    "outputLabel": "Field",
+    "tileHeight": 130,
+    "start": 2.6,
+    "end": 11.5
+  },
+  "beats": [
+    {
+      "cue": 0,
+      "pose": "present",
+      "expr": "wide"
+    },
+    {
+      "cue": 1,
+      "pose": "point",
+      "expr": "neutral"
+    },
+    {
+      "cue": 4,
+      "pose": "shrug",
+      "expr": "sly"
+    },
+    {
+      "cue": 5,
+      "pose": "cheer",
+      "expr": "happy"
+    },
+    {
+      "cue": 6,
+      "pose": "point",
+      "expr": "happy"
+    }
+  ]
+}

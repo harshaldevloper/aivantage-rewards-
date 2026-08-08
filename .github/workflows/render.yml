@@ -52,6 +52,13 @@ jobs:
         # rather than `npm ci`. This also pulls Puppeteer's Chromium.
         run: npm install --no-audit --no-fund
 
+      - name: Validate configs before spending runner time
+        # A bad palette or a missing scene file fails several minutes into the
+        # render, after Chromium has downloaded. This catches that class in a
+        # second, and fails the job before anything expensive starts.
+        working-directory: studio
+        run: python3 validate-reels.py ${{ inputs.reels }}
+
       - name: Render
         working-directory: studio
         env:

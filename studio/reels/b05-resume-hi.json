@@ -1,0 +1,65 @@
+{
+  "name": "b05-resume-hi",
+  "scene": "scene-mascot.html",
+  "keyword": "RESUME",
+  "palette": "ember",
+  "voice": "hi-IN-MadhurNeural",
+  "rate": "+8%",
+  "script": "एक फ्री A.I. है जो आपका पूरा रिज्यूमे तीस सेकंड में दोबारा लिख देता है। और नौकरी की डिमांड से मिलाकर स्कोर भी देता है, किसी इंसान के देखने से पहले ही। ना साइनअप। ना पेमेंट। ना PDF पर वॉटरमार्क। कमेंट में RESUME लिखिए, और फ़ॉलो कर लीजिए वरना मैसेज नहीं पहुंचेगा।",
+  "highlight": [
+    "फ्री",
+    "तीस",
+    "स्कोर",
+    "resume"
+  ],
+  "hot": [
+    "ना",
+    "सिर्फ़",
+    "पहले",
+    "नहीं"
+  ],
+  "stackPhrases": [
+    "ना साइनअप",
+    "ना पेमेंट",
+    "ना वॉटरमार्क"
+  ],
+  "sub": "फ़ॉलो नहीं किया तो मैसेज नहीं पहुंचेगा",
+  "demo": {
+    "act": "edit",
+    "title": "resume builder",
+    "layers": [
+      "पॉइंट्स दोबारा लिखे",
+      "समरी बनाई",
+      "ATS स्कोर चेक हुआ"
+    ],
+    "start": 2.6,
+    "end": 12
+  },
+  "beats": [
+    {
+      "cue": 0,
+      "pose": "present",
+      "expr": "wide"
+    },
+    {
+      "cue": 1,
+      "pose": "point",
+      "expr": "neutral"
+    },
+    {
+      "cue": 4,
+      "pose": "shrug",
+      "expr": "sly"
+    },
+    {
+      "cue": 5,
+      "pose": "cheer",
+      "expr": "happy"
+    },
+    {
+      "cue": 6,
+      "pose": "point",
+      "expr": "happy"
+    }
+  ]
+}

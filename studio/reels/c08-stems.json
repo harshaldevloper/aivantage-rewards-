@@ -1,0 +1,69 @@
+{
+  "name": "c08-stems",
+  "scene": "scene-mascot.html",
+  "keyword": "STEMS",
+  "palette": "ember",
+  "voice": "en-US-AndrewMultilingualNeural",
+  "rate": "+8%",
+  "script": "There's an open source A.I. that tears any song apart into vocals, drums, bass and everything else. Unlimited songs. No ads. No account. No upload. It runs on your own laptop, so the music never leaves it. The catch is it really wants an Nvidia graphics card. It still works without one, just slowly. Type STEMS in the comments, it only sends to followers.",
+  "highlight": [
+    "open",
+    "source",
+    "unlimited",
+    "stems"
+  ],
+  "hot": [
+    "no",
+    "not",
+    "nothing",
+    "only",
+    "catch",
+    "never"
+  ],
+  "stackPhrases": [
+    "No ads",
+    "No account",
+    "No upload"
+  ],
+  "sub": "IT ONLY DMS PEOPLE WHO FOLLOW",
+  "demo": {
+    "act": "process",
+    "title": "stem separator",
+    "inputIcon": "WAV",
+    "input": "track.wav",
+    "action": "Tearing it apart",
+    "outputs": 4,
+    "cols": 4,
+    "outputLabel": "Stem",
+    "tileHeight": 120,
+    "start": 2.6,
+    "end": 11.5
+  },
+  "beats": [
+    {
+      "cue": 0,
+      "pose": "present",
+      "expr": "wide"
+    },
+    {
+      "cue": 1,
+      "pose": "point",
+      "expr": "neutral"
+    },
+    {
+      "cue": 4,
+      "pose": "shrug",
+      "expr": "sly"
+    },
+    {
+      "cue": 5,
+      "pose": "cheer",
+      "expr": "happy"
+    },
+    {
+      "cue": 6,
+      "pose": "point",
+      "expr": "happy"
+    }
+  ]
+}

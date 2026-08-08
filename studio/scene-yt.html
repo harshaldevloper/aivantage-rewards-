@@ -1,0 +1,250 @@
+<!doctype html>
+<meta charset="utf-8">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { width:1920px; height:1080px; overflow:hidden; background:#05060a; }
+  body { font-family:'Arial Black','Segoe UI','Noto Sans Devanagari','Noto Sans',system-ui,sans-serif; }
+  #stage { position:relative; width:1920px; height:1080px; overflow:hidden; }
+
+  .blob { position:absolute; border-radius:50%; filter:blur(150px); will-change:transform; }
+  #b1 { width:1000px; height:1000px; opacity:.5 }
+  #b2 { width:900px;  height:900px;  opacity:.42 }
+  #b3 { width:800px;  height:800px;  opacity:.36 }
+  #b4 { width:700px;  height:700px;  opacity:.30 }
+  #vig { position:absolute; inset:0;
+    background:radial-gradient(ellipse 65% 60% at 50% 45%,transparent 0%,rgba(0,0,0,.6) 68%,rgba(0,0,0,.94) 100%) }
+  #grain { position:absolute; inset:-200px; opacity:.13; mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E") }
+
+  /* chapter label, top-left */
+  #chap { position:absolute; left:88px; top:70px; display:flex; align-items:center; gap:16px;
+    opacity:0 }
+  #chapDot { width:16px; height:16px; border-radius:50%; flex:none }
+  #chapText { font-size:30px; font-weight:800; letter-spacing:.12em; text-transform:uppercase;
+    color:#a7a7b4 }
+
+  /* the card — carries the segment's substance */
+  #card { position:absolute; left:88px; top:212px; width:1120px; opacity:0;
+    will-change:transform,opacity }
+  #kicker { font-size:32px; font-weight:900; letter-spacing:.11em; text-transform:uppercase;
+    margin-bottom:22px }
+  #name { font-size:112px; font-weight:900; letter-spacing:-.035em; color:#fff;
+    line-height:1.02; margin-bottom:30px; text-shadow:0 12px 60px rgba(0,0,0,.8) }
+  #facts { display:flex; flex-direction:column; gap:15px }
+  .fact { display:flex; gap:20px; align-items:flex-start; font-size:35px; line-height:1.34;
+    opacity:0; will-change:transform,opacity }
+  .fact em { flex:none; width:15px; height:15px; border-radius:4px; margin-top:15px }
+  .fact span { color:#dedee6; font-weight:600 }
+  .fact b { color:#fff }
+
+  /* verdict stamp */
+  #stamp { position:absolute; right:96px; top:250px; width:520px; padding:40px 44px;
+    border-radius:24px; opacity:0; will-change:transform,opacity;
+    border:2px solid rgba(255,255,255,.16); background:rgba(12,12,18,.82);
+    box-shadow:0 40px 110px rgba(0,0,0,.7) }
+  #stampLabel { font-size:26px; font-weight:900; letter-spacing:.14em; text-transform:uppercase;
+    margin-bottom:16px }
+  #stampText { font-size:40px; font-weight:900; color:#fff; line-height:1.18;
+    letter-spacing:-.02em }
+
+  /* caption strip, bottom third */
+  #cap { position:absolute; left:88px; right:88px; bottom:112px; text-align:center }
+  .w { display:inline-block; font-size:52px; font-weight:900; color:#fff; margin:0 .16em;
+    letter-spacing:-.02em; text-shadow:0 6px 34px rgba(0,0,0,.95) }
+
+  #host { position:absolute; right:96px; bottom:96px; width:260px; height:260px;
+    will-change:transform }
+  #bar { position:absolute; left:0; top:0; height:8px }
+</style>
+
+<div id="stage">
+  <div class="blob" id="b1"></div><div class="blob" id="b2"></div>
+  <div class="blob" id="b3"></div><div class="blob" id="b4"></div>
+  <div id="vig"></div>
+
+  <div id="chap"><div id="chapDot"></div><div id="chapText"></div></div>
+
+  <div id="card">
+    <div id="kicker"></div>
+    <div id="name"></div>
+    <div id="facts"></div>
+  </div>
+
+  <div id="stamp"><div id="stampLabel"></div><div id="stampText"></div></div>
+
+  <div id="cap"></div>
+
+  <div id="host">
+    <svg viewBox="0 0 660 660" width="260" height="260">
+      <defs>
+        <linearGradient id="gB" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#e8ecf5"/><stop offset="55%" stop-color="#c3cbdd"/>
+          <stop offset="100%" stop-color="#8e99b4"/>
+        </linearGradient>
+        <linearGradient id="gA" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" id="ha1" stop-color="#22d3ee"/><stop offset="100%" id="ha2" stop-color="#7c3aed"/>
+        </linearGradient>
+        <filter id="fG" x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur stdDeviation="12" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      <g id="hRoot">
+        <g id="hAnt"><rect x="322" y="86" width="16" height="66" rx="8" fill="#8e99b4"/>
+          <circle id="hBulb" cx="330" cy="80" r="26" fill="url(#gA)" filter="url(#fG)"/></g>
+        <rect x="150" y="150" width="360" height="330" rx="126" fill="url(#gB)"/>
+        <rect x="150" y="150" width="360" height="150" rx="126" fill="#fff" opacity=".18"/>
+        <rect x="186" y="208" width="288" height="200" rx="92" fill="#0a0e18"/>
+        <g id="hEyeL"><rect id="heL" x="-34" y="-40" width="68" height="80" rx="34" fill="url(#gA)" filter="url(#fG)"/></g>
+        <g id="hEyeR"><rect id="heR" x="-34" y="-40" width="68" height="80" rx="34" fill="url(#gA)" filter="url(#fG)"/></g>
+        <rect id="hMouth" x="304" y="356" width="52" height="12" rx="6" fill="#22d3ee" opacity=".9"/>
+      </g>
+    </svg>
+  </div>
+
+  <div id="grain"></div>
+  <div id="bar"></div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const clamp=(x,a,b)=>Math.min(b,Math.max(a,x));
+const c01=x=>clamp(x,0,1);
+const outCubic=x=>1-Math.pow(1-x,3);
+const outBack=x=>{const c1=1.70158,c3=c1+1;return 1+c3*Math.pow(x-1,3)+c1*Math.pow(x-1,2);};
+const smooth=x=>x*x*(3-2*x);
+
+let CFG=null, CUES=[], CHUNKS=[], DUR=0, SEGS=[], PAL=null;
+
+const PALETTES={
+  cinema:{blobs:['#7c3aed','#06b6d4','#ec4899','#2563eb'],a1:'#22d3ee',a2:'#7c3aed'},
+  ember :{blobs:['#f59e0b','#ef4444','#ec4899','#7c2d12'],a1:'#fbbf24',a2:'#ef4444'},
+  mint  :{blobs:['#10b981','#06b6d4','#3b82f6','#065f46'],a1:'#34d399',a2:'#06b6d4'},
+  violet:{blobs:['#a855f7','#6366f1','#ec4899','#1e1b4b'],a1:'#c084fc',a2:'#6366f1'},
+};
+// verdict colours are semantic, not decorative — they must not shift with the palette
+const VERDICT={
+  gone   :{c:'#d03b3b', label:'VERDICT'},
+  wrong  :{c:'#fab219', label:'ACTUALLY'},
+  free   :{c:'#0ca30c', label:'STILL FREE'},
+  neutral:{c:'#8a8a93', label:'NOTE'},
+};
+
+window.init=function(cfg){
+  CFG=cfg; CUES=cfg.cues; DUR=cfg.duration;
+  PAL=PALETTES[cfg.palette]||PALETTES.cinema;
+  ['b1','b2','b3','b4'].forEach((id,i)=>{ $(id).style.background=PAL.blobs[i]; });
+  $('ha1').setAttribute('stop-color',PAL.a1); $('ha2').setAttribute('stop-color',PAL.a2);
+  $('hMouth').setAttribute('fill',PAL.a1);
+  $('chapDot').style.background=PAL.a1;
+  $('bar').style.background=`linear-gradient(90deg,${PAL.a1},${PAL.a2})`;
+
+  // Segments anchor to the cue whose text starts with the marker, so the deck follows the
+  // voiceover without anyone hand-timing it.
+  SEGS=(cfg.segments||[]).map(s=>{
+    const norm=t=>t.toLowerCase().replace(/[^a-z0-9 ]/g,'').trim();
+    const key=norm(s.cueStartsWith||'');
+    let i=CUES.findIndex(c=>norm(c[2]).startsWith(key));
+    if(i<0) i=0;
+    return {...s, t:CUES[i][0]};
+  }).sort((a,b)=>a.t-b.t);
+
+  CHUNKS=[];
+  CUES.forEach(c=>{
+    const words=c[2].split(/\s+/).filter(Boolean);
+    const per=Math.ceil(words.length/Math.ceil(words.length/6));
+    for(let i=0;i<words.length;i+=per){
+      const g=words.slice(i,i+per);
+      const n=Math.ceil(words.length/per);
+      const slice=(c[1]-c[0])/n, gi=i/per;
+      CHUNKS.push({s:c[0]+gi*slice,e:c[0]+(gi+1)*slice,words:g});
+    }
+  });
+  seek(0);
+};
+
+function segAt(t){
+  let cur=null;
+  for(const s of SEGS){ if(t>=s.t-0.35) cur=s; else break; }
+  return cur;
+}
+
+let painted=null;
+function paint(seg){
+  if(painted===seg) return;
+  painted=seg;
+  if(!seg) return;
+  const v=VERDICT[seg.verdict]||VERDICT.neutral;
+  $('chapText').textContent=seg.chapter||'';
+  $('kicker').textContent=seg.kicker||'';
+  $('kicker').style.color=v.c;
+  $('name').textContent=seg.name||'';
+  $('facts').innerHTML=(seg.facts||[]).map((f,i)=>
+    `<div class="fact" id="f${i}"><em style="background:${PAL.a1}"></em><span>${f}</span></div>`).join('');
+  $('stampLabel').textContent=v.label;
+  $('stampLabel').style.color=v.c;
+  $('stampText').textContent=seg.verdictText||'';
+  $('stamp').style.borderColor=v.c+'66';
+}
+
+function seek(t){
+  if(!CFG) return;
+
+  const B=[[$('b1'),0.09,-90,420,300],[$('b2'),0.071,120,1500,320],
+           [$('b3'),0.11,40,380,880],[$('b4'),0.058,200,1560,900]];
+  B.forEach(([el,sp,ph,cx,cy],i)=>{
+    const a=t*sp*Math.PI*2+ph;
+    el.style.transform=`translate(${cx+Math.cos(a)*260-el.offsetWidth/2}px,`+
+      `${cy+Math.sin(a*0.77+i)*200-el.offsetHeight/2}px) scale(${1+Math.sin(a*0.6)*0.12})`;
+  });
+  const f=Math.floor(t*30);
+  $('grain').style.transform=`translate(${(f*61)%180-90}px,${(f*97)%180-90}px)`;
+  $('bar').style.width=(c01(t/DUR)*1920)+'px';
+
+  // host robot idles in the corner and "talks" while a caption is up
+  const float=Math.sin(t*1.9)*9;
+  $('host').style.transform=`translateY(${float}px) scale(${1+Math.sin(t*2.3)*0.012})`;
+  $('hAnt').setAttribute('transform',`rotate(${Math.sin(t*2.6)*5} 330 152)`);
+  $('hBulb').setAttribute('opacity',0.75+Math.sin(t*5.1)*0.25);
+  const bp=(t%3.4)/3.4;
+  const blink=bp>0.958?Math.sin((bp-0.958)/0.042*Math.PI):0;
+  const eh=Math.max(6,80*(1-blink*0.92));
+  [['hEyeL','heL',270],['hEyeR','heR',390]].forEach(([g,r,cx])=>{
+    $(g).setAttribute('transform',`translate(${cx} 304)`);
+    const el=$(r);
+    el.setAttribute('height',eh); el.setAttribute('y',-eh/2); el.setAttribute('rx',Math.min(68,eh)/2);
+  });
+  const speaking=CHUNKS.some(c=>t>=c.s&&t<c.e);
+  const mh=speaking?12+Math.abs(Math.sin(t*17))*22:10;
+  $('hMouth').setAttribute('height',mh); $('hMouth').setAttribute('y',368-mh/2);
+
+  // ---- segment deck ----
+  const seg=segAt(t);
+  paint(seg);
+  if(seg){
+    const p=outCubic(c01((t-seg.t)/0.55));
+    $('chap').style.opacity=p;
+    $('card').style.opacity=p;
+    $('card').style.transform=`translateX(${(1-p)*-52}px)`;
+    (seg.facts||[]).forEach((_,i)=>{
+      const el=$('f'+i); if(!el) return;
+      const fp=outBack(c01((t-seg.t-0.45-i*0.20)/0.34));
+      el.style.opacity=c01(fp);
+      el.style.transform=`translateX(${(1-fp)*-30}px)`;
+    });
+    const sp=outBack(c01((t-seg.t-0.9)/0.5));
+    $('stamp').style.opacity=seg.verdictText?c01(sp):0;
+    $('stamp').style.transform=`translateY(${(1-sp)*26}px) scale(${0.94+sp*0.06})`;
+  } else {
+    $('chap').style.opacity=0; $('card').style.opacity=0; $('stamp').style.opacity=0;
+  }
+
+  // ---- captions ----
+  const ch=CHUNKS.find(c=>t>=c.s&&t<c.e);
+  $('cap').innerHTML=!ch?'':ch.words.map((w,i)=>{
+    const d=i*0.035, pp=outCubic(c01((t-ch.s-d)/0.22));
+    return `<span class="w" style="opacity:${c01(pp)};transform:translateY(${(1-pp)*16}px)">${w}</span>`;
+  }).join(' ');
+}
+window.seek=seek;
+</script>
