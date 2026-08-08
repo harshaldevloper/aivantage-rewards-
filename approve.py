@@ -127,8 +127,20 @@ def cmd_send(args):
             + (f"<i>${cpm}/1k · pays from "
                f"{clip.get('min_views', 0):,} views</i>" if cpm else "")
         )
-        video = clip.get("url") or clip.get("file")
-        is_url = str(video).startswith("http")
+        # Prefer uploading the bytes over handing Telegram a URL. GitHub release
+        # downloads 302 to a signed objects.githubusercontent.com address, and
+        # Telegram's fetcher fails that with "failed to get HTTP URL content"
+        # even though the asset is public and returns 200 to curl.
+        #
+        # Direct upload allows 50MB (vs 20MB by URL), and these clips are ~8MB.
+        # The public `url` is still recorded on the queue entry below, because
+        # publish.py genuinely needs a fetchable URL for the Graph API.
+        local = clip.get("file")
+        if local and Path(local).exists():
+            video, is_url = local, False
+        else:
+            video = clip.get("url")
+            is_url = str(video).startswith("http")
 
         res = call(
             "sendVideo",

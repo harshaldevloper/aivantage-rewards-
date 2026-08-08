@@ -54,7 +54,7 @@ jobs:
             exit 1
           fi
           echo "Devanagari fonts available:"
-          fc-list :lang=hi family | sort -u | head -5
+          fc-list :lang=hi family | sort -u | head -12
 
       - name: Install edge-tts
         run: pip install --quiet edge-tts
@@ -119,6 +119,10 @@ jobs:
                   caption = data.get("script", "")[:200]
               clips.append({
                   "id": f"{tag}-{stem}",
+                  # Both, deliberately: `file` is what Telegram uploads (its URL
+                  # fetcher fails on GitHub's signed redirect), `url` is the
+                  # public address publish.py hands to the Instagram Graph API.
+                  "file": str(mp4),
                   "url": f"{base}/{mp4.name}",
                   "campaign": os.environ.get("CAMPAIGN") or "aivantage",
                   "caption": caption,
