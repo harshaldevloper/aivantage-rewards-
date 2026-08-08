@@ -35,13 +35,26 @@ jobs:
           python-version: "3.11"
 
       - name: Install ffmpeg and fonts
-        # fonts-noto-devanagari is what makes Hindi captions render. Without it
-        # the runner has no Devanagari glyphs, Chromium draws tofu boxes (▯▯▯),
-        # and the voiceover still sounds perfect -- so the failure is invisible
-        # until you watch the MP4.
+        # Hindi captions need a Devanagari-capable font on the runner. Without
+        # one Chromium draws tofu boxes (▯▯▯) while the voiceover still sounds
+        # perfect, so the failure is invisible until you watch the MP4.
+        #
+        # The face lives in fonts-noto-core (there is no fonts-noto-devanagari
+        # package -- asking for one fails the job with "Unable to locate").
+        # fonts-indic is a belt-and-braces metapackage for Indic scripts.
         run: |
+          set -euo pipefail
           sudo apt-get update -qq
-          sudo apt-get install -y -qq ffmpeg fonts-noto-core fonts-noto-devanagari
+          sudo apt-get install -y -qq ffmpeg fonts-noto-core fonts-indic
+
+          # Verify rather than assume: fontconfig knows what actually resolves
+          # for Hindi. Failing here is far cheaper than finding out in the MP4.
+          if ! fc-list :lang=hi | grep -q .; then
+            echo "::error::No Devanagari-capable font on the runner. Hindi reels would render as ▯▯▯ boxes."
+            exit 1
+          fi
+          echo "Devanagari fonts available:"
+          fc-list :lang=hi family | sort -u | head -5
 
       - name: Install edge-tts
         run: pip install --quiet edge-tts
