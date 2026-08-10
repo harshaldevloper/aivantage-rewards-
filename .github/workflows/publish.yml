@@ -48,10 +48,17 @@ jobs:
         env:
           IG_USER_ID: ${{ secrets.IG_USER_ID }}
           IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
+          # Via the environment rather than ${{ }}: a free-text input pasted
+          # straight into the script would run as shell on a runner that holds
+          # the Instagram token.
+          LIMIT: ${{ inputs.limit || 3 }}
+          DRY_RUN: ${{ inputs.dry_run && '1' || '' }}
         run: |
-          python publish.py \
-            ${{ inputs.dry_run && '--dry-run' || '' }} \
-            --limit ${{ inputs.limit || 3 }}
+          set -euo pipefail
+          case "$LIMIT" in
+            ''|*[!0-9]*) echo "::error::limit must be a positive integer"; exit 1;;
+          esac
+          python publish.py ${DRY_RUN:+--dry-run} --limit "$LIMIT"
 
       - name: Record what went live
         # Skipped on a dry run because nothing changed.

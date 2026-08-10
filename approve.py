@@ -12,6 +12,7 @@ Stdlib only.
 """
 
 import argparse
+import html
 import json
 import mimetypes
 import os
@@ -23,7 +24,7 @@ import urllib.request
 import uuid
 from pathlib import Path
 
-ROOT = Path(__file__).parent
+ROOT = Path(__file__).resolve().parent
 QUEUE = ROOT / "state" / "queue.json"
 OFFSET = ROOT / "state" / "tg_offset.json"
 API = "https://api.telegram.org/bot{token}/{method}"
@@ -96,6 +97,46 @@ def save(path, obj):
     path.write_text(json.dumps(obj, indent=1), encoding="utf-8")
 
 
+def esc(s):
+    """Text is sent with parse_mode=HTML, so anything interpolated into a
+    caption has to be escaped -- captions carry campaign labels and generated
+    scripts, and an unescaped `<` either breaks the send or forges markup."""
+    return html.escape(str(s or ""), quote=False)
+
+
+def from_our_chat(cq):
+    """True when a callback came from the configured chat.
+
+    Verdicts decide what gets published, so they may only come from the owner's
+    chat. The bot is reachable by anyone who knows its username, and clip ids
+    are public (they are release asset names), so an unauthenticated poll would
+    let a stranger approve a clip.
+    """
+    expected = chat_id().strip()
+    chat = (cq.get("message") or {}).get("chat") or {}
+    username = chat.get("username")
+    return str(chat.get("id")) == expected or (
+        bool(username) and f"@{username}" == expected
+    )
+
+
+def local_video(clip):
+    """The clip's rendered file, if it is inside the repo.
+
+    A manifest is just JSON on disk; a `file` of "../../.ssh/id_rsa" would
+    otherwise be read and uploaded to a chat.
+    """
+    raw = clip.get("file")
+    if not raw:
+        return None
+    path = Path(raw)
+    path = (path if path.is_absolute() else ROOT / path).resolve()
+    if not path.is_relative_to(ROOT):
+        print(f"  refusing {raw}: outside the repo")
+        return None
+    return path if path.is_file() else None
+
+
 def keyboard(clip_id):
     return json.dumps(
         {
@@ -122,9 +163,9 @@ def cmd_send(args):
     for clip in pending:
         cpm = clip.get("cpm")
         caption = (
-            f"<b>{clip.get('campaign', 'clip')}</b>\n"
-            f"{clip.get('caption', '')}\n\n"
-            + (f"<i>${cpm}/1k · pays from "
+            f"<b>{esc(clip.get('campaign') or 'clip')}</b>\n"
+            f"{esc(clip.get('caption'))}\n\n"
+            + (f"<i>${esc(cpm)}/1k · pays from "
                f"{clip.get('min_views', 0):,} views</i>" if cpm else "")
         )
         # Prefer uploading the bytes over handing Telegram a URL. GitHub release
@@ -135,12 +176,15 @@ def cmd_send(args):
         # Direct upload allows 50MB (vs 20MB by URL), and these clips are ~8MB.
         # The public `url` is still recorded on the queue entry below, because
         # publish.py genuinely needs a fetchable URL for the Graph API.
-        local = clip.get("file")
-        if local and Path(local).exists():
-            video, is_url = local, False
+        local = local_video(clip)
+        if local:
+            video, is_url = str(local), False
         else:
             video = clip.get("url")
-            is_url = str(video).startswith("http")
+            is_url = str(video).startswith("https://")
+            if not is_url:
+                print(f"  skip {clip['id']}: no local file and no https url")
+                continue
 
         res = call(
             "sendVideo",
@@ -190,11 +234,23 @@ def cmd_poll(args):
         if not cq:
             continue
 
+        if not from_our_chat(cq):
+            call("answerCallbackQuery",
+                 {"callback_query_id": cq["id"], "text": "Not authorised"})
+            continue
+
         action, _, clip_id = cq.get("data", "").partition(":")
+        if action not in ("ok", "no"):
+            continue
         entry = queue.get(clip_id)
         if not entry:
             call("answerCallbackQuery",
                  {"callback_query_id": cq["id"], "text": "Unknown clip"})
+            continue
+
+        if entry.get("status") != "pending":
+            call("answerCallbackQuery",
+                 {"callback_query_id": cq["id"], "text": "Already decided"})
             continue
 
         entry["status"] = "approved" if action == "ok" else "rejected"

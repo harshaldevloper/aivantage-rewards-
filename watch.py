@@ -9,6 +9,7 @@ time, and posts a digest to Telegram. Stdlib only -- no pip install, no paid API
 """
 
 import argparse
+import html
 import json
 import os
 import re
@@ -19,6 +20,10 @@ from pathlib import Path
 
 FEED = "https://contentrewards.com/api/discover-temp"
 STATE = Path(__file__).parent / "state" / "seen.json"
+
+# The feed is public and unauthenticated, so its response is untrusted input:
+# cap what we read rather than letting it decide this process's memory use.
+MAX_FEED_BYTES = 8 * 1024 * 1024
 
 # Campaigns worth posting about on an AI-tools account. Category alone is too
 # narrow -- plenty of AI SaaS campaigns get filed under "Product".
@@ -54,19 +59,24 @@ def fetch(campaign_type):
         headers={"accept": "application/json", "user-agent": "Mozilla/5.0"},
     )
     with urllib.request.urlopen(req, timeout=30) as r:
-        return json.loads(r.read().decode("utf-8")).get("campaigns", [])
+        raw = r.read(MAX_FEED_BYTES + 1)
+    if len(raw) > MAX_FEED_BYTES:
+        sys.exit(f"feed response exceeded {MAX_FEED_BYTES} bytes")
+    payload = json.loads(raw.decode("utf-8"))
+    campaigns = payload.get("campaigns", []) if isinstance(payload, dict) else []
+    return [c for c in campaigns if isinstance(c, dict) and c.get("id")]
 
 
 def payout_for(campaign, platform):
     """The payout terms for our platform, or None if the campaign skips it."""
-    for p in campaign.get("payouts", []):
-        if p.get("platform") == platform:
+    for p in campaign.get("payouts") or []:
+        if isinstance(p, dict) and p.get("platform") == platform:
             return p
     return None
 
 
 def relevant(campaign):
-    text = f"{campaign.get('title','')} {campaign.get('description','')}"
+    text = f"{campaign.get('title') or ''} {campaign.get('description') or ''}"
     return campaign.get("category") == "Technology" or bool(KEYWORDS.search(text))
 
 
@@ -111,9 +121,9 @@ def evaluate():
 
 
 def esc(s):
-    return (
-        str(s).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-    )
+    """Every field in the digest comes from the public feed and the digest is
+    sent with parse_mode=HTML, so all of it is escaped before interpolation."""
+    return html.escape("" if s is None else str(s), quote=False)
 
 
 def render(picks, limit=8):
@@ -132,14 +142,14 @@ def render(picks, limit=8):
         mv = p.get("minViewsRequired") or 0
         cap = p.get("maxPayoutPerSubmission")
         tag = "🆕 " if c["_new"] else ""
-        lines.append(f"{tag}<b>{esc(c['title'][:60])}</b>")
+        lines.append(f"{tag}<b>{esc(str(c.get('title') or '')[:60])}</b>")
         lines.append(
-            f"   ${cpm:.2f}/1k · {esc(c['budgetRemaining'])} left · "
+            f"   ${cpm:.2f}/1k · {esc(c.get('budgetRemaining'))} left · "
             f"{c['_kind'].lower()}"
         )
         lines.append(
-            f"   pays from {mv:,} views"
-            + (f" · cap ${cap}/clip" if cap else "")
+            f"   pays from {money(mv):,.0f} views"
+            + (f" · cap ${esc(cap)}/clip" if cap else "")
             + f" · at 1k views = ${cpm:.2f}"
         )
         lines.append("")
