@@ -13,87 +13,25 @@ Stdlib only.
 
 import argparse
 import json
-import mimetypes
 import os
-import sys
 import time
-import urllib.error
-import urllib.parse
-import urllib.request
-import uuid
 from pathlib import Path
 
-ROOT = Path(__file__).parent
-QUEUE = ROOT / "state" / "queue.json"
-OFFSET = ROOT / "state" / "tg_offset.json"
-API = "https://api.telegram.org/bot{token}/{method}"
+from common import (
+    STATE_DIR,
+    read_json,
+    telegram,
+    telegram_chat_id,
+    utf8_stdout,
+    write_json,
+)
+
+QUEUE = STATE_DIR / "queue.json"
+OFFSET = STATE_DIR / "tg_offset.json"
 
 # Telegram caps a media group / burst; five is also about as many clips as a
 # person will actually review carefully in one sitting.
 BATCH = int(os.environ.get("APPROVE_BATCH", "5"))
-
-
-def token():
-    t = os.environ.get("TELEGRAM_BOT_TOKEN")
-    if not t:
-        sys.exit("TELEGRAM_BOT_TOKEN is not set")
-    return t
-
-
-def chat_id():
-    c = os.environ.get("TELEGRAM_CHAT_ID")
-    if not c:
-        sys.exit("TELEGRAM_CHAT_ID is not set")
-    return c
-
-
-def call(method, params=None, files=None):
-    """POST to the Bot API. Uses multipart only when uploading a local file."""
-    url = API.format(token=token(), method=method)
-    params = {k: v for k, v in (params or {}).items() if v is not None}
-
-    if not files:
-        data = urllib.parse.urlencode(params).encode()
-        req = urllib.request.Request(url, data=data)
-    else:
-        boundary = uuid.uuid4().hex
-        body = bytearray()
-        for k, v in params.items():
-            body += (
-                f"--{boundary}\r\n"
-                f'Content-Disposition: form-data; name="{k}"\r\n\r\n{v}\r\n'
-            ).encode()
-        for field, path in files.items():
-            path = Path(path)
-            ctype = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
-            body += (
-                f"--{boundary}\r\n"
-                f'Content-Disposition: form-data; name="{field}";'
-                f' filename="{path.name}"\r\n'
-                f"Content-Type: {ctype}\r\n\r\n"
-            ).encode()
-            body += path.read_bytes() + b"\r\n"
-        body += f"--{boundary}--\r\n".encode()
-        req = urllib.request.Request(url, data=bytes(body))
-        req.add_header("Content-Type", f"multipart/form-data; boundary={boundary}")
-
-    try:
-        with urllib.request.urlopen(req, timeout=120) as r:
-            return json.loads(r.read().decode("utf-8"))
-    except urllib.error.HTTPError as e:
-        detail = e.read().decode("utf-8", "replace")
-        raise SystemExit(f"Telegram {method} failed: {e.code} {detail}")
-
-
-def load(path, default):
-    if path.exists():
-        return json.loads(path.read_text(encoding="utf-8"))
-    return default
-
-
-def save(path, obj):
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(obj, indent=1), encoding="utf-8")
 
 
 def keyboard(clip_id):
@@ -112,7 +50,7 @@ def keyboard(clip_id):
 def cmd_send(args):
     """Read a manifest of rendered clips and push a review batch."""
     clips = json.loads(Path(args.manifest).read_text(encoding="utf-8"))
-    queue = load(QUEUE, {})
+    queue = read_json(QUEUE, {})
 
     pending = [c for c in clips if c["id"] not in queue][: args.batch]
     if not pending:
@@ -142,10 +80,10 @@ def cmd_send(args):
             video = clip.get("url")
             is_url = str(video).startswith("http")
 
-        res = call(
+        res = telegram(
             "sendVideo",
             {
-                "chat_id": chat_id(),
+                "chat_id": telegram_chat_id(),
                 "caption": caption[:1024],
                 "parse_mode": "HTML",
                 "reply_markup": keyboard(clip["id"]),
@@ -166,15 +104,15 @@ def cmd_send(args):
         print(f"sent {clip['id']}")
         time.sleep(1)  # stay clear of the Bot API rate limit
 
-    save(QUEUE, queue)
+    write_json(QUEUE, queue)
 
 
 def cmd_poll(args):
     """Drain callback taps and record each verdict."""
-    queue = load(QUEUE, {})
-    offset = load(OFFSET, {}).get("offset", 0)
+    queue = read_json(QUEUE, {})
+    offset = read_json(OFFSET, {}).get("offset", 0)
 
-    res = call(
+    res = telegram(
         "getUpdates",
         {"offset": offset, "timeout": 0, "allowed_updates": '["callback_query"]'},
     )
@@ -193,8 +131,8 @@ def cmd_poll(args):
         action, _, clip_id = cq.get("data", "").partition(":")
         entry = queue.get(clip_id)
         if not entry:
-            call("answerCallbackQuery",
-                 {"callback_query_id": cq["id"], "text": "Unknown clip"})
+            telegram("answerCallbackQuery",
+                     {"callback_query_id": cq["id"], "text": "Unknown clip"})
             continue
 
         entry["status"] = "approved" if action == "ok" else "rejected"
@@ -202,14 +140,14 @@ def cmd_poll(args):
         changed += 1
 
         verdict = "Approved — queued to publish" if action == "ok" else "Rejected"
-        call("answerCallbackQuery",
-             {"callback_query_id": cq["id"], "text": verdict})
+        telegram("answerCallbackQuery",
+                 {"callback_query_id": cq["id"], "text": verdict})
         # Replace the buttons so a clip cannot be voted on twice.
         if entry.get("message_id"):
-            call(
+            telegram(
                 "editMessageReplyMarkup",
                 {
-                    "chat_id": chat_id(),
+                    "chat_id": telegram_chat_id(),
                     "message_id": entry["message_id"],
                     "reply_markup": json.dumps(
                         {"inline_keyboard": [[{
@@ -220,13 +158,13 @@ def cmd_poll(args):
                 },
             )
 
-    save(QUEUE, queue)
-    save(OFFSET, {"offset": offset})
+    write_json(QUEUE, queue)
+    write_json(OFFSET, {"offset": offset})
     print(f"recorded {changed} verdict(s)")
 
 
 def cmd_status(args):
-    queue = load(QUEUE, {})
+    queue = read_json(QUEUE, {})
     counts = {}
     for e in queue.values():
         counts[e["status"]] = counts.get(e["status"], 0) + 1
@@ -252,8 +190,7 @@ def main():
     st.set_defaults(fn=cmd_status)
 
     args = ap.parse_args()
-    if hasattr(sys.stdout, "reconfigure"):
-        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    utf8_stdout()
     args.fn(args)
 
 

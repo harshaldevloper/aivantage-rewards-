@@ -9,16 +9,22 @@ time, and posts a digest to Telegram. Stdlib only -- no pip install, no paid API
 """
 
 import argparse
-import json
 import os
 import re
-import sys
 import urllib.parse
-import urllib.request
-from pathlib import Path
+
+from common import (
+    STATE_DIR,
+    read_json,
+    request_json,
+    telegram,
+    telegram_chat_id,
+    utf8_stdout,
+    write_json,
+)
 
 FEED = "https://contentrewards.com/api/discover-temp"
-STATE = Path(__file__).parent / "state" / "seen.json"
+STATE = STATE_DIR / "seen.json"
 
 # Campaigns worth posting about on an AI-tools account. Category alone is too
 # narrow -- plenty of AI SaaS campaigns get filed under "Product".
@@ -49,12 +55,11 @@ def fetch(campaign_type):
     qs = urllib.parse.urlencode(
         {"limit": 200, "type": campaign_type, "sort": "Highest Budget"}
     )
-    req = urllib.request.Request(
+    res = request_json(
         f"{FEED}?{qs}",
         headers={"accept": "application/json", "user-agent": "Mozilla/5.0"},
     )
-    with urllib.request.urlopen(req, timeout=30) as r:
-        return json.loads(r.read().decode("utf-8")).get("campaigns", [])
+    return res.get("campaigns", [])
 
 
 def payout_for(campaign, platform):
@@ -81,9 +86,7 @@ def score(campaign, payout):
 
 
 def evaluate():
-    seen = set()
-    if STATE.exists():
-        seen = set(json.loads(STATE.read_text(encoding="utf-8")))
+    seen = set(read_json(STATE, []))
 
     picks = []
     for kind in ("Clipping", "UGC"):
@@ -148,23 +151,15 @@ def render(picks, limit=8):
 
 
 def send(text):
-    token = os.environ.get("TELEGRAM_BOT_TOKEN")
-    chat = os.environ.get("TELEGRAM_CHAT_ID")
-    if not (token and chat):
-        sys.exit("TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID must be set")
-    body = urllib.parse.urlencode(
+    return telegram(
+        "sendMessage",
         {
-            "chat_id": chat,
+            "chat_id": telegram_chat_id(),
             "text": text,
             "parse_mode": "HTML",
             "disable_web_page_preview": "true",
-        }
-    ).encode()
-    req = urllib.request.Request(
-        f"https://api.telegram.org/bot{token}/sendMessage", data=body
+        },
     )
-    with urllib.request.urlopen(req, timeout=30) as r:
-        return json.loads(r.read().decode("utf-8"))
 
 
 def main():
@@ -174,9 +169,7 @@ def main():
                     help="stay silent unless a campaign is new")
     args = ap.parse_args()
 
-    # Windows consoles default to cp1252 and choke on the emoji in the digest.
-    if hasattr(sys.stdout, "reconfigure"):
-        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    utf8_stdout()
 
     picks = evaluate()
     if args.new_only and not any(c["_new"] for c in picks):
@@ -190,10 +183,7 @@ def main():
         return
 
     send(text)
-    STATE.parent.mkdir(parents=True, exist_ok=True)
-    STATE.write_text(
-        json.dumps(sorted(c["id"] for c in picks), indent=1), encoding="utf-8"
-    )
+    write_json(STATE, sorted(c["id"] for c in picks))
     print(f"sent digest: {len(picks)} campaigns")
 
 

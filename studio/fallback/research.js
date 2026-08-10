@@ -10,24 +10,12 @@
 
 const fs = require('fs');
 const path = require('path');
-const { execFileSync } = require('child_process');
+const {
+  ROOT, loadEnv, askNim, nextReelName, writeConfig, writePost, renderReel,
+} = require('./nim');
 
-const ROOT = path.resolve(__dirname, '..');
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' +
            '(KHTML, like Gecko) Chrome/130.0 Safari/537.36';
-
-// --- config ---------------------------------------------------------------
-function loadEnv() {
-  const p = path.join(ROOT, '.env');
-  if (!fs.existsSync(p)) throw new Error('.env not found at ' + p);
-  const env = {};
-  for (const line of fs.readFileSync(p, 'utf8').split(/\r?\n/)) {
-    const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)$/);
-    if (m) env[m[1]] = m[2].trim();
-  }
-  if (!env.NVIDIA_API_KEY) throw new Error('NVIDIA_API_KEY missing from .env');
-  return env;
-}
 
 const strip = (html) => html
   .replace(/<script[\s\S]*?<\/script>/gi, ' ')
@@ -47,7 +35,7 @@ async function grab(url, limit = 3500) {
 }
 
 // --- the model call -------------------------------------------------------
-async function askNim(env, sources, covered) {
+async function askForReel(env, sources, covered) {
   const system = `You research free AI tools for an Instagram account and write reel scripts.
 
 HARD RULES:
@@ -91,35 +79,7 @@ Pick ONE tool that is genuinely free and useful to a normal person in a browser,
 not in the covered list. Prefer something aimed at one specific profession or hobby. Write the
 reel for it.`;
 
-  // Models get retired without notice, so walk the list until one answers.
-  const models = (env.NIM_MODELS || 'meta/llama-3.1-70b-instruct')
-    .split(',').map(s => s.trim()).filter(Boolean);
-  const problems = [];
-
-  for (const model of models) {
-    try {
-      const res = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'authorization': `Bearer ${env.NVIDIA_API_KEY}`,
-                   'content-type': 'application/json' },
-        body: JSON.stringify({
-          model, temperature: 0.7, max_tokens: 1600,
-          messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
-        }),
-        signal: AbortSignal.timeout(120000),
-      });
-      if (!res.ok) { problems.push(`${model}: HTTP ${res.status}`); continue; }
-      const txt = (await res.json()).choices[0].message.content;
-      const m = txt.match(/\{[\s\S]*\}/);
-      if (!m) { problems.push(`${model}: no JSON in reply`); continue; }
-      console.log(`  (model: ${model})`);
-      return JSON.parse(m[0]);
-    } catch (e) {
-      problems.push(`${model}: ${e.message}`);
-    }
-  }
-  throw new Error('Every model failed:\n  ' + problems.join('\n  ') +
-    '\nPick working ones from https://build.nvidia.com and update NIM_MODELS in .env');
+  return askNim(env, { system, user, maxTokens: 1600 });
 }
 
 // --- main -----------------------------------------------------------------
@@ -138,12 +98,10 @@ reel for it.`;
     ? fs.readFileSync(coveredPath, 'utf8') : '(none yet)';
 
   console.log('asking NVIDIA NIM...');
-  const pick = await askNim(env, sources, covered);
+  const pick = await askForReel(env, sources, covered);
   console.log(`  -> ${pick.tool}  [${pick.keyword}]`);
 
-  const n = String(fs.readdirSync(path.join(ROOT, 'reels'))
-    .filter(f => f.endsWith('.json')).length + 1).padStart(2, '0');
-  const name = `${n}-${pick.keyword.toLowerCase()}`;
+  const name = nextReelName(pick.keyword);
 
   const cfg = {
     name, scene: 'scene-mascot.html', keyword: pick.keyword,
@@ -163,12 +121,9 @@ reel for it.`;
       { cue: 8, pose: 'point',   expr: 'happy'   },
     ],
   };
-  const cfgPath = path.join(ROOT, 'reels', `${name}.json`);
-  fs.writeFileSync(cfgPath, JSON.stringify(cfg, null, 2));
+  const cfgPath = writeConfig(cfg);
 
-  // Everything Claude would normally hand over in chat, written to a file instead.
-  fs.mkdirSync(path.join(ROOT, 'out'), { recursive: true });
-  fs.writeFileSync(path.join(ROOT, 'out', `${name}-post.txt`),
+  writePost(name,
 `TOOL      ${pick.tool}
 LINK      ${pick.url}
 WHAT'S FREE
@@ -193,7 +148,7 @@ ${pick.affiliate}
 Open ${pick.url} yourself and confirm the free tier is what this says.
 This was written by a backup model with no browsing - it is more likely
 to be wrong than the usual process. Verify, then post.
-`, 'utf8');
+`);
 
   if (process.argv.includes('--dry')) {
     console.log(`\nDRY RUN — skipped rendering.`);
@@ -203,8 +158,7 @@ to be wrong than the usual process. Verify, then post.
   }
 
   console.log('rendering...');
-  execFileSync('node', [path.join(ROOT, 'make-reel.js'), cfgPath],
-               { stdio: 'inherit', cwd: ROOT });
+  renderReel(cfgPath);
 
   console.log(`\nDONE`);
   console.log(`  video: out/reel-${name}.mp4`);

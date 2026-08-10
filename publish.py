@@ -33,11 +33,17 @@ import sys
 import time
 import urllib.error
 import urllib.parse
-import urllib.request
-from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent
-QUEUE = ROOT / "state" / "queue.json"
+from common import (
+    STATE_DIR,
+    die,
+    read_json,
+    request_json,
+    require_env,
+    write_json,
+)
+
+QUEUE = STATE_DIR / "queue.json"
 
 API_VERSION = os.environ.get("IG_API_VERSION", "v21.0")
 GRAPH = f"https://graph.facebook.com/{API_VERSION}"
@@ -52,32 +58,17 @@ POLL_INTERVAL = 5
 POLL_TIMEOUT = 300
 
 
-def die(msg):
-    print(f"\n✗ {msg}\n", file=sys.stderr)
-    sys.exit(1)
-
-
-def env(name, hint):
-    val = os.environ.get(name, "").strip()
-    if not val:
-        die(f"{name} is not set.\n  {hint}")
-    return val
-
-
 def graph(path, params=None, method="GET"):
     """One Graph API call. Surfaces Instagram's own error text, not a traceback."""
     params = dict(params or {})
     params["access_token"] = TOKEN
     url = f"{GRAPH}/{path}"
-
-    if method == "GET":
-        req = urllib.request.Request(f"{url}?{urllib.parse.urlencode(params)}")
-    else:
-        req = urllib.request.Request(url, data=urllib.parse.urlencode(params).encode())
+    query = urllib.parse.urlencode(params)
 
     try:
-        with urllib.request.urlopen(req, timeout=60) as r:
-            return json.loads(r.read())
+        if method == "GET":
+            return request_json(f"{url}?{query}", timeout=60)
+        return request_json(url, data=query.encode(), timeout=60)
     except urllib.error.HTTPError as e:
         body = e.read().decode("utf-8", "replace")
         try:
@@ -104,16 +95,10 @@ def graph(path, params=None, method="GET"):
 
 
 def load_queue():
-    if not QUEUE.exists():
+    queue = read_json(QUEUE)
+    if queue is None:
         die(f"No queue at {QUEUE}\n  Nothing has been rendered or approved yet.")
-    try:
-        return json.loads(QUEUE.read_text(encoding="utf-8"))
-    except ValueError as e:
-        die(f"{QUEUE} is not valid JSON ({e}). Fix or delete it.")
-
-
-def save_queue(queue):
-    QUEUE.write_text(json.dumps(queue, indent=1), encoding="utf-8")
+    return queue
 
 
 def remaining_quota():
@@ -245,7 +230,7 @@ def main():
         entry["ig_media_id"] = media_id
         # Save after each success. A crash mid-batch must never re-post what
         # already went live.
-        save_queue(queue)
+        write_json(QUEUE, queue)
         published += 1
         print(f"  ✓ live as {media_id}")
 
@@ -259,12 +244,12 @@ if __name__ == "__main__":
         IG_USER = os.environ.get("IG_USER_ID", "dry")
         TOKEN = os.environ.get("IG_ACCESS_TOKEN", "dry")
     else:
-        IG_USER = env(
+        IG_USER = require_env(
             "IG_USER_ID",
             "This is the Instagram *Business account* id (numeric), not your @handle.\n"
             "  Get it from the Meta app dashboard or the Graph API Explorer.",
         )
-        TOKEN = env(
+        TOKEN = require_env(
             "IG_ACCESS_TOKEN",
             "A long-lived Instagram Graph API token with instagram_content_publish.\n"
             "  Short-lived tokens expire in an hour and will fail overnight.",

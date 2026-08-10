@@ -53,7 +53,9 @@ workflows. No database, nothing to host, full history for free.
 | `watch.py` | Pulls campaigns, filters, ranks, sends the digest |
 | `approve.py` | `send` / `poll` / `status` — the approval gate |
 | `publish.py` | Posts approved clips to Instagram; `--dry-run` is safe |
+| `common.py` | Shared stdlib helpers: JSON state, env vars, HTTP, Telegram calls |
 | `studio/` | Reel renderer: edge-tts → Puppeteer frames → ffmpeg |
+| `studio/fallback/nim.js` | Shared `.env` / NIM / reel-scaffolding helpers for the fallback writers |
 | `.github/workflows/watch.yml` | Daily digest |
 | `.github/workflows/render.yml` | Cloud render + review batch (manual trigger) |
 | `.github/workflows/approve.yml` | Drains taps every 15 min |

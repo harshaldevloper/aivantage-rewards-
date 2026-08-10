@@ -7,24 +7,11 @@
 // That removes the one failure mode that can kill the account: promising a free tier that
 // does not exist.
 
-const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
-const { execFileSync } = require('child_process');
-
-const ROOT = path.resolve(__dirname, '..');
-
-function loadEnv() {
-  const p = path.join(ROOT, '.env');
-  if (!fs.existsSync(p)) throw new Error('.env not found at ' + p);
-  const env = {};
-  for (const line of fs.readFileSync(p, 'utf8').split(/\r?\n/)) {
-    const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)$/);
-    if (m) env[m[1]] = m[2].trim();
-  }
-  if (!env.NVIDIA_API_KEY) throw new Error('NVIDIA_API_KEY missing from .env');
-  return env;
-}
+const {
+  ROOT, loadEnv, askNim, nextReelName, writeConfig, writePost, renderReel,
+} = require('./nim');
 
 function askBlock(prompt) {
   return new Promise((resolve) => {
@@ -80,31 +67,12 @@ Reply with ONLY a JSON object, no markdown fence, no commentary:
   "ytDescription": "2 keyword-rich opening lines, then what is free, then the catch"
 }`;
 
-async function askNim(env, research) {
-  const models = (env.NIM_MODELS || 'meta/llama-3.1-70b-instruct')
-    .split(',').map(s => s.trim()).filter(Boolean);
-  const problems = [];
-  for (const model of models) {
-    try {
-      const res = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
-        method: 'POST',
-        headers: { authorization: `Bearer ${env.NVIDIA_API_KEY}`, 'content-type': 'application/json' },
-        body: JSON.stringify({
-          model, temperature: 0.7, max_tokens: 1800,
-          messages: [{ role: 'system', content: SYSTEM },
-                     { role: 'user', content: `MY VERIFIED RESEARCH:\n\n${research}` }],
-        }),
-        signal: AbortSignal.timeout(120000),
-      });
-      if (!res.ok) { problems.push(`${model}: HTTP ${res.status}`); continue; }
-      const txt = (await res.json()).choices[0].message.content;
-      const m = txt.match(/\{[\s\S]*\}/);
-      if (!m) { problems.push(`${model}: no JSON`); continue; }
-      console.log(`  (model: ${model})`);
-      return JSON.parse(m[0]);
-    } catch (e) { problems.push(`${model}: ${e.message}`); }
-  }
-  throw new Error('Every model failed:\n  ' + problems.join('\n  '));
+function askForReel(env, research) {
+  return askNim(env, {
+    system: SYSTEM,
+    user: `MY VERIFIED RESEARCH:\n\n${research}`,
+    maxTokens: 1800,
+  });
 }
 
 (async () => {
@@ -127,12 +95,10 @@ async function askNim(env, research) {
   }
 
   console.log('\nwriting the reel...');
-  const r = await askNim(env, research);
+  const r = await askForReel(env, research);
   console.log(`  keyword: ${r.keyword}`);
 
-  const n = String(fs.readdirSync(path.join(ROOT, 'reels'))
-    .filter(f => f.endsWith('.json')).length + 1).padStart(2, '0');
-  const name = `r${n}-${String(r.keyword).toLowerCase()}`;
+  const name = nextReelName(r.keyword, 'r');
 
   const cfg = {
     name, scene: 'scene-mascot.html', keyword: r.keyword,
@@ -159,12 +125,9 @@ async function askNim(env, research) {
       { cue: 6, pose: 'point', expr: 'happy' },
     ],
   };
-  const cfgPath = path.join(ROOT, 'reels', `${name}.json`);
-  fs.writeFileSync(cfgPath, JSON.stringify(cfg, null, 2));
+  const cfgPath = writeConfig(cfg);
 
-  fs.mkdirSync(path.join(ROOT, 'out'), { recursive: true });
-  const txt = path.join(ROOT, 'out', `${name}-post.txt`);
-  fs.writeFileSync(txt,
+  const txt = writePost(name,
 `========================= INSTAGRAM CAPTION =========================
 ${r.caption}
 
@@ -192,11 +155,10 @@ Upload the same file. YouTube names the tool - Instagram does not.
 
 ========================= YOUR RESEARCH =============================
 ${research}
-`, 'utf8');
+`);
 
   console.log('rendering...\n');
-  execFileSync('node', [path.join(ROOT, 'make-reel.js'), cfgPath],
-               { stdio: 'inherit', cwd: ROOT });
+  renderReel(cfgPath);
 
   console.log('\n=================================================================');
   console.log(` VIDEO    ${path.join(ROOT, 'out', `reel-${name}.mp4`)}`);
