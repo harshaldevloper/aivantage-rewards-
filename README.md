@@ -59,6 +59,7 @@ workflows. No database, nothing to host, full history for free.
 | `.github/workflows/approve.yml` | Drains taps every 15 min |
 | `.github/workflows/publish.yml` | Publishes approved clips, twice daily |
 | `state/` | `seen.json`, `queue.json` — committed by CI |
+| `tests/` | Unit tests for the Python scripts — `pip install -r requirements-dev.txt && pytest` |
 
 ## Tuning the filter
 
