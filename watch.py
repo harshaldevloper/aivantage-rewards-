@@ -9,13 +9,14 @@ time, and posts a digest to Telegram. Stdlib only -- no pip install, no paid API
 """
 
 import argparse
-import json
 import os
 import re
 import sys
 import urllib.parse
 import urllib.request
 from pathlib import Path
+
+from common import PipelineError, fail, read_json, request_json, warn, write_json
 
 FEED = "https://contentrewards.com/api/discover-temp"
 STATE = Path(__file__).parent / "state" / "seen.json"
@@ -38,11 +39,21 @@ PLATFORM = os.environ.get("PLATFORM", "instagram")
 
 
 def money(s):
-    """'$17,070.77' -> 17070.77"""
+    """'$17,070.77' -> 17070.77, or None when the feed sends something else.
+
+    None rather than 0.0 on purpose: a budget that could not be parsed is not a
+    budget of zero, and the caller has to decide whether to drop the campaign or
+    say so out loud.
+    """
+    if s is None:
+        return None
+    digits = re.sub(r"[^\d.]", "", str(s))
+    if not digits:
+        return None
     try:
-        return float(re.sub(r"[^\d.]", "", str(s)) or 0)
+        return float(digits)
     except ValueError:
-        return 0.0
+        return None
 
 
 def fetch(campaign_type):
@@ -53,14 +64,28 @@ def fetch(campaign_type):
         f"{FEED}?{qs}",
         headers={"accept": "application/json", "user-agent": "Mozilla/5.0"},
     )
-    with urllib.request.urlopen(req, timeout=30) as r:
-        return json.loads(r.read().decode("utf-8")).get("campaigns", [])
+    payload = request_json(req, timeout=30, label=f"campaign feed ({campaign_type})")
+    if not isinstance(payload, dict):
+        raise PipelineError(
+            f"campaign feed returned {type(payload).__name__}, expected an object"
+        )
+    campaigns = payload.get("campaigns")
+    if campaigns is None:
+        # The feed is public and unversioned, so a shape change shows up here
+        # first. Silently ranking zero campaigns would look like a quiet day.
+        raise PipelineError(
+            f"campaign feed has no 'campaigns' key (got {sorted(payload)[:8]}). "
+            "The public API shape probably changed."
+        )
+    if not isinstance(campaigns, list):
+        raise PipelineError("campaign feed 'campaigns' is not a list")
+    return campaigns
 
 
 def payout_for(campaign, platform):
     """The payout terms for our platform, or None if the campaign skips it."""
-    for p in campaign.get("payouts", []):
-        if p.get("platform") == platform:
+    for p in campaign.get("payouts") or []:
+        if isinstance(p, dict) and p.get("platform") == platform:
             return p
     return None
 
@@ -70,41 +95,60 @@ def relevant(campaign):
     return campaign.get("category") == "Technology" or bool(KEYWORDS.search(text))
 
 
-def score(campaign, payout):
+def number(value, default=0.0):
+    """Feed fields arrive as strings, nulls and occasionally junk."""
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def score(campaign, payout, budget):
     """Rank by earnings potential, penalising hard-to-reach view floors and
     near-exhausted budgets -- a $10 CPM with $200 left is not an opportunity."""
-    cpm = float(payout.get("pricePerThousandViews") or 0)
-    budget = money(campaign.get("budgetRemaining"))
-    min_views = payout.get("minViewsRequired") or 1
+    cpm = number(payout.get("pricePerThousandViews"))
+    min_views = number(payout.get("minViewsRequired"), 1) or 1
     reach_penalty = min(1.0, 2000 / max(min_views, 1))
     return cpm * reach_penalty * min(budget / 5000, 3.0)
 
 
 def evaluate():
-    seen = set()
-    if STATE.exists():
-        seen = set(json.loads(STATE.read_text(encoding="utf-8")))
+    seen = set(read_json(STATE, default=[], what="seen-campaign list") or [])
 
     picks = []
+    unparseable = 0
     for kind in ("Clipping", "UGC"):
         for c in fetch(kind):
+            if not isinstance(c, dict) or not c.get("id") or not c.get("title"):
+                unparseable += 1
+                continue
             if not relevant(c):
                 continue
             p = payout_for(c, PLATFORM)
             if not p:
                 continue
-            cpm = float(p.get("pricePerThousandViews") or 0)
+            cpm = number(p.get("pricePerThousandViews"))
             if cpm < MIN_CPM:
                 continue
-            if (p.get("minViewsRequired") or 0) > MAX_MIN_VIEWS:
+            if number(p.get("minViewsRequired")) > MAX_MIN_VIEWS:
                 continue
-            if money(c.get("budgetRemaining")) < MIN_BUDGET:
+            budget = money(c.get("budgetRemaining"))
+            if budget is None:
+                # Keep it, flagged: dropping a campaign because one field is
+                # oddly formatted is how a good campaign goes unnoticed.
+                warn(f"{c['title'][:40]!r}: unreadable budget "
+                     f"{c.get('budgetRemaining')!r} — keeping it, unranked on budget")
+                budget = MIN_BUDGET
+            elif budget < MIN_BUDGET:
                 continue
             c["_payout"] = p
             c["_kind"] = kind
-            c["_score"] = score(c, p)
+            c["_score"] = score(c, p, budget)
             c["_new"] = c["id"] not in seen
             picks.append(c)
+
+    if unparseable:
+        warn(f"{unparseable} feed entrie(s) had no id/title and were skipped")
 
     picks.sort(key=lambda c: c["_score"], reverse=True)
     return picks
@@ -128,13 +172,13 @@ def render(picks, limit=8):
     lines = [head, ""]
     for c in picks[:limit]:
         p = c["_payout"]
-        cpm = float(p.get("pricePerThousandViews") or 0)
-        mv = p.get("minViewsRequired") or 0
+        cpm = number(p.get("pricePerThousandViews"))
+        mv = int(number(p.get("minViewsRequired")))
         cap = p.get("maxPayoutPerSubmission")
         tag = "🆕 " if c["_new"] else ""
         lines.append(f"{tag}<b>{esc(c['title'][:60])}</b>")
         lines.append(
-            f"   ${cpm:.2f}/1k · {esc(c['budgetRemaining'])} left · "
+            f"   ${cpm:.2f}/1k · {esc(c.get('budgetRemaining', 'unknown'))} left · "
             f"{c['_kind'].lower()}"
         )
         lines.append(
@@ -163,8 +207,15 @@ def send(text):
     req = urllib.request.Request(
         f"https://api.telegram.org/bot{token}/sendMessage", data=body
     )
-    with urllib.request.urlopen(req, timeout=30) as r:
-        return json.loads(r.read().decode("utf-8"))
+    res = request_json(req, timeout=30, label="Telegram sendMessage")
+    # Telegram answers some failures with HTTP 200 and ok=false. Treating that
+    # as sent is what marks every campaign 'seen' for a digest nobody received.
+    if not isinstance(res, dict) or not res.get("ok"):
+        raise PipelineError(
+            "Telegram accepted the request but reported a failure: "
+            f"{res.get('description') if isinstance(res, dict) else res}"
+        )
+    return res
 
 
 def main():
@@ -178,7 +229,11 @@ def main():
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
-    picks = evaluate()
+    try:
+        picks = evaluate()
+    except PipelineError as e:
+        fail(str(e))
+
     if args.new_only and not any(c["_new"] for c in picks):
         print("no new campaigns; staying quiet")
         return
@@ -189,11 +244,13 @@ def main():
         print(plain.replace("&amp;", "&").replace("&lt;", "<").replace("&gt;", ">"))
         return
 
-    send(text)
-    STATE.parent.mkdir(parents=True, exist_ok=True)
-    STATE.write_text(
-        json.dumps(sorted(c["id"] for c in picks), indent=1), encoding="utf-8"
-    )
+    # Order matters: marking campaigns as seen before the digest is delivered
+    # would suppress them forever on the strength of a message that never sent.
+    try:
+        send(text)
+        write_json(STATE, sorted(c["id"] for c in picks))
+    except PipelineError as e:
+        fail(str(e))
     print(f"sent digest: {len(picks)} campaigns")
 
 

@@ -17,11 +17,20 @@ import mimetypes
 import os
 import sys
 import time
-import urllib.error
 import urllib.parse
 import urllib.request
 import uuid
 from pathlib import Path
+
+from common import (
+    ApiError,
+    PipelineError,
+    fail,
+    read_json,
+    request_json,
+    warn,
+    write_json,
+)
 
 ROOT = Path(__file__).parent
 QUEUE = ROOT / "state" / "queue.json"
@@ -48,7 +57,12 @@ def chat_id():
 
 
 def call(method, params=None, files=None):
-    """POST to the Bot API. Uses multipart only when uploading a local file."""
+    """POST to the Bot API and return the `result`.
+
+    Raises rather than returning a half-answer: Telegram reports plenty of
+    failures as HTTP 200 with `ok: false`, and a caller reading `result` out of
+    one of those gets a None it will not notice until much later.
+    """
     url = API.format(token=token(), method=method)
     params = {k: v for k, v in (params or {}).items() if v is not None}
 
@@ -65,6 +79,8 @@ def call(method, params=None, files=None):
             ).encode()
         for field, path in files.items():
             path = Path(path)
+            if not path.exists():
+                raise PipelineError(f"{method}: file to upload is missing: {path}")
             ctype = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
             body += (
                 f"--{boundary}\r\n"
@@ -77,23 +93,13 @@ def call(method, params=None, files=None):
         req = urllib.request.Request(url, data=bytes(body))
         req.add_header("Content-Type", f"multipart/form-data; boundary={boundary}")
 
-    try:
-        with urllib.request.urlopen(req, timeout=120) as r:
-            return json.loads(r.read().decode("utf-8"))
-    except urllib.error.HTTPError as e:
-        detail = e.read().decode("utf-8", "replace")
-        raise SystemExit(f"Telegram {method} failed: {e.code} {detail}")
-
-
-def load(path, default):
-    if path.exists():
-        return json.loads(path.read_text(encoding="utf-8"))
-    return default
-
-
-def save(path, obj):
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(obj, indent=1), encoding="utf-8")
+    res = request_json(req, timeout=120, label=f"Telegram {method}")
+    if not isinstance(res, dict) or not res.get("ok"):
+        raise ApiError(
+            f"Telegram {method}",
+            (res.get("description") if isinstance(res, dict) else res),
+        )
+    return res.get("result")
 
 
 def keyboard(clip_id):
@@ -111,14 +117,31 @@ def keyboard(clip_id):
 
 def cmd_send(args):
     """Read a manifest of rendered clips and push a review batch."""
-    clips = json.loads(Path(args.manifest).read_text(encoding="utf-8"))
-    queue = load(QUEUE, {})
+    manifest = Path(args.manifest)
+    clips = read_json(manifest, what="render manifest")
+    if clips is None:
+        raise PipelineError(
+            f"no manifest at {manifest}. The render step writes it; if the render\n"
+            "  failed, there is nothing to review."
+        )
+    if not isinstance(clips, list):
+        raise PipelineError(f"{manifest} should hold a list of clips")
+
+    unidentified = [c for c in clips if not isinstance(c, dict) or not c.get("id")]
+    if unidentified:
+        raise PipelineError(
+            f"{len(unidentified)} manifest entrie(s) have no id. Verdicts are keyed\n"
+            "  by id, so sending these would produce clips nobody can approve."
+        )
+
+    queue = read_json(QUEUE, default={}, what="approval queue")
 
     pending = [c for c in clips if c["id"] not in queue][: args.batch]
     if not pending:
         print("nothing new to review")
         return
 
+    sent = 0
     for clip in pending:
         cpm = clip.get("cpm")
         caption = (
@@ -142,6 +165,11 @@ def cmd_send(args):
             video = clip.get("url")
             is_url = str(video).startswith("http")
 
+        if not video:
+            raise PipelineError(
+                f"{clip['id']} has neither a local file nor a URL to send"
+            )
+
         res = call(
             "sendVideo",
             {
@@ -154,85 +182,129 @@ def cmd_send(args):
             files=None if is_url else {"video": video},
         )
 
+        message_id = (res or {}).get("message_id")
+        if not message_id:
+            # Without it the buttons can never be retired, so a clip could be
+            # voted on twice. Better to know now than at approval time.
+            warn(f"{clip['id']}: Telegram returned no message_id; "
+                 "its buttons cannot be retired after a verdict")
+
         queue[clip["id"]] = {
             "status": "pending",
             "campaign": clip.get("campaign"),
             "caption": clip.get("caption"),
             "url": clip.get("url"),
             "file": clip.get("file"),
-            "message_id": res.get("result", {}).get("message_id"),
+            "message_id": message_id,
             "sent_at": int(time.time()),
         }
+        sent += 1
+        # Persist per clip, not per batch. A clip that reached Telegram but is
+        # missing from the queue cannot be approved and gets sent again on the
+        # next run, so a failure halfway must not discard the ones before it.
+        write_json(QUEUE, queue)
         print(f"sent {clip['id']}")
         time.sleep(1)  # stay clear of the Bot API rate limit
 
-    save(QUEUE, queue)
+    print(f"sent {sent} clip(s) for review")
+
+
+def acknowledge(method, params, clip_id):
+    """Cosmetic Bot API call: log a failure, never lose a verdict over one.
+
+    A callback id expires after a few minutes, so a tap made just before this
+    run started routinely fails to answer. The verdict itself is already
+    recorded locally; aborting here would discard it and every one after it.
+    """
+    try:
+        call(method, params)
+        return True
+    except PipelineError as e:
+        warn(f"{clip_id}: {method} failed ({e}); verdict still recorded")
+        return False
 
 
 def cmd_poll(args):
     """Drain callback taps and record each verdict."""
-    queue = load(QUEUE, {})
-    offset = load(OFFSET, {}).get("offset", 0)
+    queue = read_json(QUEUE, default={}, what="approval queue")
+    offset = (read_json(OFFSET, default={}, what="Telegram offset") or {}).get(
+        "offset", 0
+    )
 
-    res = call(
+    updates = call(
         "getUpdates",
         {"offset": offset, "timeout": 0, "allowed_updates": '["callback_query"]'},
-    )
-    updates = res.get("result", [])
+    ) or []
     if not updates:
         print("no taps")
         return
 
     changed = 0
-    for u in updates:
-        offset = max(offset, u["update_id"] + 1)
-        cq = u.get("callback_query")
-        if not cq:
-            continue
+    try:
+        for u in updates:
+            cq = u.get("callback_query")
+            # The offset only advances past an update this run has finished
+            # with. Anything left unhandled is redelivered next time instead of
+            # being acknowledged into the void.
+            offset = max(offset, u["update_id"] + 1)
+            if not cq:
+                continue
 
-        action, _, clip_id = cq.get("data", "").partition(":")
-        entry = queue.get(clip_id)
-        if not entry:
-            call("answerCallbackQuery",
-                 {"callback_query_id": cq["id"], "text": "Unknown clip"})
-            continue
+            action, _, clip_id = cq.get("data", "").partition(":")
+            entry = queue.get(clip_id)
+            if not entry:
+                acknowledge("answerCallbackQuery",
+                            {"callback_query_id": cq["id"], "text": "Unknown clip"},
+                            clip_id or "?")
+                warn(f"tap for unknown clip {clip_id!r} — not on the queue")
+                continue
+            if action not in ("ok", "no"):
+                acknowledge("answerCallbackQuery",
+                            {"callback_query_id": cq["id"], "text": "Already decided"},
+                            clip_id)
+                continue
 
-        entry["status"] = "approved" if action == "ok" else "rejected"
-        entry["decided_at"] = int(time.time())
-        changed += 1
+            entry["status"] = "approved" if action == "ok" else "rejected"
+            entry["decided_at"] = int(time.time())
+            changed += 1
 
-        verdict = "Approved — queued to publish" if action == "ok" else "Rejected"
-        call("answerCallbackQuery",
-             {"callback_query_id": cq["id"], "text": verdict})
-        # Replace the buttons so a clip cannot be voted on twice.
-        if entry.get("message_id"):
-            call(
-                "editMessageReplyMarkup",
-                {
-                    "chat_id": chat_id(),
-                    "message_id": entry["message_id"],
-                    "reply_markup": json.dumps(
-                        {"inline_keyboard": [[{
-                            "text": f"{'✅' if action == 'ok' else '❌'} {verdict}",
-                            "callback_data": "done",
-                        }]]}
-                    ),
-                },
-            )
+            verdict = "Approved — queued to publish" if action == "ok" else "Rejected"
+            acknowledge("answerCallbackQuery",
+                        {"callback_query_id": cq["id"], "text": verdict}, clip_id)
+            # Replace the buttons so a clip cannot be voted on twice.
+            if entry.get("message_id"):
+                acknowledge(
+                    "editMessageReplyMarkup",
+                    {
+                        "chat_id": chat_id(),
+                        "message_id": entry["message_id"],
+                        "reply_markup": json.dumps(
+                            {"inline_keyboard": [[{
+                                "text": f"{'✅' if action == 'ok' else '❌'} {verdict}",
+                                "callback_data": "done",
+                            }]]}
+                        ),
+                    },
+                    clip_id,
+                )
+    finally:
+        # getUpdates does not redeliver once the offset moves on, so verdicts
+        # collected before a failure have to be persisted even on the way out.
+        write_json(QUEUE, queue)
+        write_json(OFFSET, {"offset": offset})
 
-    save(QUEUE, queue)
-    save(OFFSET, {"offset": offset})
     print(f"recorded {changed} verdict(s)")
 
 
 def cmd_status(args):
-    queue = load(QUEUE, {})
+    queue = read_json(QUEUE, default={}, what="approval queue")
     counts = {}
     for e in queue.values():
-        counts[e["status"]] = counts.get(e["status"], 0) + 1
+        status = e.get("status", "unknown")
+        counts[status] = counts.get(status, 0) + 1
     print(json.dumps(counts, indent=1) if counts else "queue empty")
     for cid, e in queue.items():
-        if e["status"] == "approved":
+        if e.get("status") == "approved":
             print(f"  approved: {cid} -> {e.get('url') or e.get('file')}")
 
 
@@ -254,7 +326,10 @@ def main():
     args = ap.parse_args()
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-    args.fn(args)
+    try:
+        args.fn(args)
+    except PipelineError as e:
+        fail(str(e))
 
 
 if __name__ == "__main__":

@@ -1,0 +1,35 @@
+name: Checks
+
+# Cheap and dependency-free: seconds of the free Actions quota, and it catches
+# a broken pipeline script before a scheduled run does at 09:00 IST.
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Error-handling regression tests
+        run: python -m unittest discover -s tests -v
+
+      - name: Reel configs still validate
+        working-directory: studio
+        run: python3 validate-reels.py
+
+      - name: Studio scripts parse
+        run: |
+          set -euo pipefail
+          for f in studio/*.js studio/fallback/*.js; do node --check "$f"; done

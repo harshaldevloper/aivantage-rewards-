@@ -46,6 +46,14 @@ demote.
 **State lives in git.** Verdicts and seen-campaign IDs are committed by the
 workflows. No database, nothing to host, full history for free.
 
+**Failures are loud, and partial work is kept.** `state/` is the only record of
+what was reviewed and what went live, so it is written atomically and after
+every clip rather than at the end of a batch — a run that dies halfway leaves
+the finished half recorded, and the persist step in each workflow runs even when
+the job failed. A campaign is marked "seen" only once the digest is actually
+delivered, and Telegram and Instagram are both taken at their word only when
+they say `ok` — both answer some failures with HTTP 200.
+
 ## Files
 
 | Path | What it does |
@@ -53,12 +61,14 @@ workflows. No database, nothing to host, full history for free.
 | `watch.py` | Pulls campaigns, filters, ranks, sends the digest |
 | `approve.py` | `send` / `poll` / `status` — the approval gate |
 | `publish.py` | Posts approved clips to Instagram; `--dry-run` is safe |
+| `common.py` | Retries, atomic state writes, and the "a 200 is not a success" checks the three scripts share |
 | `studio/` | Reel renderer: edge-tts → Puppeteer frames → ffmpeg |
 | `.github/workflows/watch.yml` | Daily digest |
 | `.github/workflows/render.yml` | Cloud render + review batch (manual trigger) |
 | `.github/workflows/approve.yml` | Drains taps every 15 min |
 | `.github/workflows/publish.yml` | Publishes approved clips, twice daily |
 | `state/` | `seen.json`, `queue.json` — committed by CI |
+| `tests/` | `python -m unittest discover -s tests` — the failure paths, stdlib only |
 
 ## Tuning the filter
 

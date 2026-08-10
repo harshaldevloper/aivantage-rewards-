@@ -30,7 +30,45 @@ const FRAMES_ROOT = path.join(ROOT, 'frames');
 
 const cfgPath = process.argv[2];
 if (!cfgPath) { console.error('usage: node make-reel.js reels/<name>.json'); process.exit(1); }
-const cfg = JSON.parse(fs.readFileSync(path.resolve(cfgPath), 'utf8'));
+
+// A render costs minutes and, in CI, runner quota. Everything that can be known
+// to be broken before Chromium starts is checked here, with a message that says
+// what to fix rather than a stack trace from inside the scene.
+function loadConfig(p) {
+  const abs = path.resolve(p);
+  let raw;
+  try {
+    raw = fs.readFileSync(abs, 'utf8');
+  } catch (e) {
+    throw new Error(`cannot read config ${abs}: ${e.message}`);
+  }
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (e) {
+    throw new Error(`${abs} is not valid JSON: ${e.message}`);
+  }
+  if (!parsed || typeof parsed !== 'object') throw new Error(`${abs} must be a JSON object`);
+  if (typeof parsed.script !== 'string' || !parsed.script.trim()) {
+    throw new Error(`${abs} has no "script" — there is nothing to voice`);
+  }
+  return parsed;
+}
+
+// Every failure below is an operator error, not a bug: report the message and
+// let the top-level catch set the exit code.
+function run(bin, args, what, capture = false) {
+  try {
+    return execFileSync(bin, args, capture ? {} : { stdio: 'inherit' });
+  } catch (e) {
+    if (e.code === 'ENOENT') {
+      throw new Error(`${bin} is not installed or not on PATH (needed to ${what})`);
+    }
+    throw new Error(`${bin} failed while trying to ${what} (exit ${e.status})`);
+  }
+}
+
+const cfg = loadConfig(cfgPath);
 const name = cfg.name || path.basename(cfgPath, '.json');
 
 const norm = s => s.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
@@ -62,16 +100,32 @@ function parseVtt(txt) {
   const mp3 = path.join(OUT, `${name}.mp3`);
   const vtt = path.join(OUT, `${name}.vtt`);
   console.log('generating voiceover...');
-  execFileSync(PY, ['-m', 'edge_tts',
+  run(PY, ['-m', 'edge_tts',
     '--voice', cfg.voice || 'en-US-AndrewMultilingualNeural',
     `--rate=${cfg.rate || '+8%'}`,
     '--file', scriptFile, '--write-media', mp3, '--write-subtitles', vtt,
-  ], { stdio: 'inherit' });
+  ], 'generate the voiceover');
+
+  // edge-tts can exit 0 having written nothing when the voice name is wrong.
+  for (const f of [mp3, vtt]) {
+    if (!fs.existsSync(f) || fs.statSync(f).size === 0) {
+      throw new Error(`edge-tts produced no ${path.basename(f)} — check cfg.voice ` +
+                      `(${cfg.voice || 'default'}) and that the script is not empty`);
+    }
+  }
 
   const cues = parseVtt(fs.readFileSync(vtt, 'utf8'));
-  const duration = parseFloat(execFileSync('ffprobe', ['-v', 'error',
+  if (!cues.length) throw new Error(`no subtitle cues parsed from ${vtt}`);
+  const probed = run('ffprobe', ['-v', 'error',
     '-show_entries', 'format=duration', '-of',
-    'default=noprint_wrappers=1:nokey=1', mp3]).toString().trim());
+    'default=noprint_wrappers=1:nokey=1', mp3],
+    'read the voiceover duration', true).toString().trim();
+  const duration = parseFloat(probed);
+  // NaN here does not throw: it silently becomes zero frames and a video that
+  // is somehow empty at the very end of the pipeline.
+  if (!Number.isFinite(duration) || duration <= 0) {
+    throw new Error(`ffprobe reported no usable duration for ${mp3} (got "${probed}")`);
+  }
   console.log(`  ${cues.length} phrases, ${duration.toFixed(2)}s`);
 
   // 2. resolve which cues stack, and where the CTA fires ---------------------
@@ -157,18 +211,24 @@ function parseVtt(txt) {
   }));
 
   // 4. mux ------------------------------------------------------------------
+  const rendered = fs.readdirSync(FRAMES).filter(f => f.endsWith('.jpg')).length;
+  if (rendered !== total) {
+    throw new Error(`expected ${total} frames, found ${rendered} in ${FRAMES} — ` +
+                    'encoding this would silently produce a truncated reel');
+  }
+
   const mp4 = path.join(OUT, `reel-${name}.mp4`);
   console.log('encoding...');
-  execFileSync('ffmpeg', ['-y', '-loglevel', 'error',
+  run('ffmpeg', ['-y', '-loglevel', 'error',
     '-framerate', String(FPS), '-i', path.join(FRAMES, 'f%05d.jpg'), '-i', mp3,
     // 'slow' buffers many frames and ran out of memory on this 7.5GB machine (x264 malloc
     // failure). 'medium' at the same CRF is visually indistinguishable here and far leaner.
     '-c:v', 'libx264', '-preset', 'medium', '-crf', '19', '-threads', '2',
     '-profile:v', 'high', '-level', '4.1', '-pix_fmt', 'yuv420p',
     '-c:a', 'aac', '-b:a', '192k', '-ar', '44100',
-    '-shortest', '-movflags', '+faststart', mp4], { stdio: 'inherit' });
+    '-shortest', '-movflags', '+faststart', mp4], 'encode the MP4');
 
   fs.rmSync(FRAMES, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 });
   const mb = (fs.statSync(mp4).size / 1048576).toFixed(2);
   console.log(`\nDONE  ${mp4}  (${mb} MB, ${(duration/60).toFixed(1)} min, ${W}x${H})`);
-})().catch(e => { console.error(e); process.exit(1); });
+})().catch(e => { console.error(`\nFAILED: ${e.message}`); process.exit(1); });

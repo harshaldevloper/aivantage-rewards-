@@ -15,7 +15,6 @@ it here too.
 """
 import json
 import pathlib
-import re
 import sys
 
 HERE = pathlib.Path(__file__).resolve().parent
@@ -48,10 +47,19 @@ def check(path):
         cfg = json.loads(path.read_text(encoding="utf-8"))
     except ValueError as e:
         return [f"not valid JSON: {e}"], []
+    except OSError as e:
+        return [f"could not be read: {e}"], []
+
+    if not isinstance(cfg, dict):
+        return [f"should be a JSON object, got {type(cfg).__name__}"], []
 
     for key in REQUIRED:
         if not cfg.get(key):
             errs.append(f"missing required field: {key}")
+        elif not isinstance(cfg[key], str):
+            # The whole point of this file is to fail here rather than several
+            # minutes into a render with a TypeError from inside the scene.
+            errs.append(f"{key} must be a string, got {type(cfg[key]).__name__}")
     if errs:
         return errs, warns
 
@@ -67,15 +75,27 @@ def check(path):
         errs.append(f'palette "{pal}" unknown — pick one of {sorted(PALETTES)}')
 
     demo = cfg.get("demo") or {}
-    if demo:
+    if demo and not isinstance(demo, dict):
+        errs.append(f"demo must be an object, got {type(demo).__name__}")
+    elif demo:
         act = demo.get("act")
         if act not in ACTS:
             errs.append(f'demo.act "{act}" unknown — pick one of {sorted(ACTS)}')
         start, end = demo.get("start"), demo.get("end")
-        if start is not None and end is not None and start >= end:
-            errs.append(f"demo.start ({start}) must be before demo.end ({end})")
+        if isinstance(start, (int, float)) and isinstance(end, (int, float)):
+            if start >= end:
+                errs.append(f"demo.start ({start}) must be before demo.end ({end})")
+        elif start is not None or end is not None:
+            errs.append(f"demo.start/end must be numbers, got {start!r}/{end!r}")
 
-    for i, beat in enumerate(cfg.get("beats", [])):
+    beats = cfg.get("beats") or []
+    if not isinstance(beats, list):
+        errs.append(f"beats must be a list, got {type(beats).__name__}")
+        beats = []
+    for i, beat in enumerate(beats):
+        if not isinstance(beat, dict):
+            errs.append(f"beats[{i}] must be an object")
+            continue
         if beat.get("pose") not in POSES:
             errs.append(f'beats[{i}].pose "{beat.get("pose")}" unknown')
         if beat.get("expr") not in EXPRS:
@@ -100,7 +120,11 @@ def check(path):
     # `hot` is a global emphasis dictionary reused across configs; words that
     # don't occur are simply not emphasised. Only `highlight` is authored per
     # script, so only that one is worth flagging.
-    missing = [w for w in cfg.get("highlight", []) if w.lower() not in script]
+    highlight = cfg.get("highlight") or []
+    if not isinstance(highlight, list):
+        errs.append(f"highlight must be a list, got {type(highlight).__name__}")
+        highlight = []
+    missing = [w for w in highlight if isinstance(w, str) and w.lower() not in script]
     if missing and not is_yt:
         warns.append(f"highlight words never appear in script: {missing}")
 

@@ -54,8 +54,11 @@ jobs:
             --limit ${{ inputs.limit || 3 }}
 
       - name: Record what went live
-        # Skipped on a dry run because nothing changed.
-        if: ${{ !inputs.dry_run }}
+        # always(), because a partly failed batch is exactly when this matters:
+        # publish.py now exits non-zero if any clip failed, and the clips that
+        # did go live must still have their markers committed or the next run
+        # posts them again. Skipped on a dry run because nothing changed.
+        if: ${{ always() && !inputs.dry_run }}
         run: |
           if [ -n "$(git status --porcelain state/)" ]; then
             git config user.name  "github-actions[bot]"

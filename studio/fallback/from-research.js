@@ -97,7 +97,12 @@ async function askNim(env, research) {
         signal: AbortSignal.timeout(120000),
       });
       if (!res.ok) { problems.push(`${model}: HTTP ${res.status}`); continue; }
-      const txt = (await res.json()).choices[0].message.content;
+      const body = await res.json();
+      const txt = body?.choices?.[0]?.message?.content;
+      if (typeof txt !== 'string') {
+        problems.push(`${model}: unexpected response shape ${JSON.stringify(body).slice(0, 160)}`);
+        continue;
+      }
       const m = txt.match(/\{[\s\S]*\}/);
       if (!m) { problems.push(`${model}: no JSON`); continue; }
       console.log(`  (model: ${model})`);
@@ -128,6 +133,12 @@ async function askNim(env, research) {
 
   console.log('\nwriting the reel...');
   const r = await askNim(env, research);
+  for (const field of ['keyword', 'script', 'caption']) {
+    if (typeof r[field] !== 'string' || !r[field].trim()) {
+      throw new Error(`the model's reply has no usable "${field}". Re-run, or try a\n` +
+        '  different model in NIM_MODELS.');
+    }
+  }
   console.log(`  keyword: ${r.keyword}`);
 
   const n = String(fs.readdirSync(path.join(ROOT, 'reels'))

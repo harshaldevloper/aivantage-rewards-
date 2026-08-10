@@ -31,10 +31,11 @@ import json
 import os
 import sys
 import time
-import urllib.error
 import urllib.parse
 import urllib.request
 from pathlib import Path
+
+from common import HttpError, PipelineError, read_json, request_json, write_json
 
 ROOT = Path(__file__).resolve().parent
 QUEUE = ROOT / "state" / "queue.json"
@@ -50,6 +51,22 @@ DAILY_CAP = 25
 # containers stranded and look like a broken token.
 POLL_INTERVAL = 5
 POLL_TIMEOUT = 300
+
+# Set in main() once the arguments say whether credentials are needed at all.
+IG_USER = ""
+TOKEN = ""
+
+
+class FatalError(PipelineError):
+    """Nothing later in the run can succeed either -- stop the whole batch.
+
+    A dead token or an exhausted rate limit is fatal. A single clip Instagram
+    will not transcode is not: the rest of the batch is still publishable.
+    """
+
+
+class ClipError(PipelineError):
+    """This clip failed. Others may still publish, but the run is not a success."""
 
 
 def die(msg):
@@ -76,44 +93,52 @@ def graph(path, params=None, method="GET"):
         req = urllib.request.Request(url, data=urllib.parse.urlencode(params).encode())
 
     try:
-        with urllib.request.urlopen(req, timeout=60) as r:
-            return json.loads(r.read())
-    except urllib.error.HTTPError as e:
-        body = e.read().decode("utf-8", "replace")
+        res = request_json(req, timeout=60, label=f"Graph API {path}")
+    except HttpError as e:
         try:
-            err = json.loads(body).get("error", {})
+            err = json.loads(e.body).get("error", {})
             code = err.get("code")
-            message = err.get("message", body)
+            message = err.get("message", e.body)
         except ValueError:
-            code, message = None, body
+            code, message = None, e.body
 
         if code == 190:
-            die(
+            raise FatalError(
                 "Instagram rejected the access token (code 190).\n"
                 "  Long-lived tokens expire after ~60 days. Generate a new one in\n"
                 "  the Meta app dashboard and update the IG_ACCESS_TOKEN secret."
-            )
-        if code == 4 or code == 32:
-            die(
+            ) from e
+        if code in (4, 32):
+            raise FatalError(
                 f"Instagram rate limit reached (code {code}).\n"
                 "  Nothing was lost -- approved clips stay queued. Re-run later."
-            )
-        die(f"Graph API error on {path}\n  code={code}\n  {message}")
-    except urllib.error.URLError as e:
-        die(f"Could not reach the Graph API: {e.reason}")
+            ) from e
+        raise ClipError(f"Graph API error on {path}\n  code={code}\n  {message}") from e
+
+    if not isinstance(res, dict):
+        raise ClipError(f"Graph API returned {type(res).__name__} for {path}")
+    # A 200 carrying an `error` object is still a failure, and reading only the
+    # field we wanted turns it into a None that surfaces much later.
+    if "error" in res:
+        raise ClipError(f"Graph API error on {path}\n  {res['error']}")
+    return res
 
 
 def load_queue():
-    if not QUEUE.exists():
-        die(f"No queue at {QUEUE}\n  Nothing has been rendered or approved yet.")
-    try:
-        return json.loads(QUEUE.read_text(encoding="utf-8"))
-    except ValueError as e:
-        die(f"{QUEUE} is not valid JSON ({e}). Fix or delete it.")
+    queue = read_json(QUEUE, what="publish queue")
+    if queue is None:
+        raise FatalError(
+            f"No queue at {QUEUE}\n  Nothing has been rendered or approved yet."
+        )
+    if not isinstance(queue, dict):
+        raise FatalError(f"{QUEUE} should hold an object keyed by clip id.")
+    return queue
 
 
 def save_queue(queue):
-    QUEUE.write_text(json.dumps(queue, indent=1), encoding="utf-8")
+    # Atomic: this file is the only record of what already went live, and a
+    # truncated one means the next run re-posts it.
+    write_json(QUEUE, queue)
 
 
 def remaining_quota():
@@ -121,13 +146,15 @@ def remaining_quota():
     try:
         res = graph(f"{IG_USER}/content_publishing_limit",
                     {"fields": "quota_usage"})
-        used = res.get("data", [{}])[0].get("quota_usage", 0)
+        used = (res.get("data") or [{}])[0].get("quota_usage", 0)
         return max(0, DAILY_CAP - int(used))
-    except SystemExit:
+    except FatalError:
+        # A dead token or a rate limit is not a quota-reading hiccup.
         raise
-    except Exception:
-        # Non-fatal: the cap is a safety net, not the point of the run.
-        print("  (could not read publishing quota; assuming capacity)")
+    except (PipelineError, LookupError, TypeError, ValueError) as e:
+        # Non-fatal: the cap is a safety net, not the point of the run. Still
+        # say why, so "assuming capacity" is never the whole story in the log.
+        print(f"  (could not read publishing quota: {e}; assuming capacity)")
         return DAILY_CAP
 
 
@@ -141,16 +168,20 @@ def wait_for_container(creation_id):
         if status == "FINISHED":
             return True
         if status == "ERROR":
-            die(
+            raise ClipError(
                 f"Instagram could not process the video.\n"
                 f"  {res.get('status', 'no detail given')}\n"
                 "  Usual causes: the URL is not publicly fetchable, the file is not\n"
                 "  MP4/H.264+AAC, or the aspect ratio is outside 0.01:1--10:1."
             )
+        if status is None:
+            raise ClipError(
+                f"Container {creation_id} reported no status_code: {res}"
+            )
         time.sleep(POLL_INTERVAL)
         waited += POLL_INTERVAL
 
-    die(
+    raise ClipError(
         f"Container {creation_id} still not FINISHED after {POLL_TIMEOUT}s.\n"
         "  It may finish later -- re-run and it will be retried as a new upload."
     )
@@ -160,8 +191,10 @@ def publish_one(clip_id, entry):
     """Container -> wait -> publish. Returns the live media id."""
     video_url = entry.get("url")
     if not video_url or not str(video_url).startswith("http"):
-        print(f"  skip {clip_id}: no public URL on this entry")
-        return None
+        raise ClipError(
+            f"{clip_id} has no public URL — the Graph API can only fetch one.\n"
+            "  Render it again so the workflow attaches a release asset."
+        )
 
     caption = (entry.get("caption") or "").strip()
 
@@ -173,7 +206,7 @@ def publish_one(clip_id, entry):
     )
     creation_id = container.get("id")
     if not creation_id:
-        die(f"No container id returned for {clip_id}: {container}")
+        raise ClipError(f"No container id returned for {clip_id}: {container}")
 
     print(f"  waiting for transcode ({creation_id})")
     wait_for_container(creation_id)
@@ -184,7 +217,13 @@ def publish_one(clip_id, entry):
     )
     media_id = published.get("id")
     if not media_id:
-        die(f"Publish returned no media id for {clip_id}: {published}")
+        # The post may or may not exist. Say so rather than marking it published
+        # (which would hide a missing post) or unpublished (which risks a double).
+        raise ClipError(
+            f"Publish returned no media id for {clip_id}: {published}\n"
+            "  Check the account before re-running — this clip is not marked "
+            "published."
+        )
     return media_id
 
 
@@ -195,6 +234,23 @@ def main():
     ap.add_argument("--limit", type=int, default=5,
                     help="max clips to publish this run (default 5)")
     args = ap.parse_args()
+
+    global IG_USER, TOKEN
+    if args.dry_run:
+        IG_USER, TOKEN = os.environ.get("IG_USER_ID", "dry"), "dry"
+    else:
+        # Resolved before anything else: failing here is clearer than failing
+        # mid-batch with half the clips published.
+        IG_USER = env(
+            "IG_USER_ID",
+            "This is the Instagram *Business account* id (numeric), not your @handle.\n"
+            "  Get it from the Meta app dashboard or the Graph API Explorer.",
+        )
+        TOKEN = env(
+            "IG_ACCESS_TOKEN",
+            "A long-lived Instagram Graph API token with instagram_content_publish.\n"
+            "  Short-lived tokens expire in an hour and will fail overnight.",
+        )
 
     queue = load_queue()
     ready = [
@@ -235,10 +291,17 @@ def main():
         print(f"publishing {budget} of {len(ready)} this run (quota/limit)")
 
     published = 0
+    failures = []
     for clip_id, entry in ready[:budget]:
         print(f"\n{clip_id}")
-        media_id = publish_one(clip_id, entry)
-        if not media_id:
+        try:
+            media_id = publish_one(clip_id, entry)
+        except ClipError as e:
+            # One unusable clip should not strand the rest of the batch, but it
+            # must still colour the exit code -- a green run that published
+            # nothing is the failure mode this whole file exists to avoid.
+            print(f"  ✗ {e}", file=sys.stderr)
+            failures.append(clip_id)
             continue
 
         entry["published_at"] = int(time.time())
@@ -250,23 +313,12 @@ def main():
         print(f"  ✓ live as {media_id}")
 
     print(f"\npublished {published} clip(s)")
+    if failures:
+        die(f"{len(failures)} clip(s) failed to publish: {', '.join(failures)}")
 
 
 if __name__ == "__main__":
-    # Resolved after arg parsing would be tidier, but every path below needs
-    # them and failing here gives a clearer message than failing mid-batch.
-    if "--dry-run" in sys.argv:
-        IG_USER = os.environ.get("IG_USER_ID", "dry")
-        TOKEN = os.environ.get("IG_ACCESS_TOKEN", "dry")
-    else:
-        IG_USER = env(
-            "IG_USER_ID",
-            "This is the Instagram *Business account* id (numeric), not your @handle.\n"
-            "  Get it from the Meta app dashboard or the Graph API Explorer.",
-        )
-        TOKEN = env(
-            "IG_ACCESS_TOKEN",
-            "A long-lived Instagram Graph API token with instagram_content_publish.\n"
-            "  Short-lived tokens expire in an hour and will fail overnight.",
-        )
-    main()
+    try:
+        main()
+    except PipelineError as e:
+        die(str(e))

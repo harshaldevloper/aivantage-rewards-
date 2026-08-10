@@ -36,13 +36,19 @@ const strip = (html) => html
   .replace(/&[a-z]+;/gi, ' ')
   .split('\n').map(s => s.trim()).filter(Boolean).join('\n');
 
+// A failed source is not an empty one. The whole point of fetching is to stop
+// the model inventing tools from training data, so a silent "[url failed]"
+// placeholder is the most dangerous possible fallback: it reads like content.
+// Failures are reported to the caller, which decides whether enough is left.
 async function grab(url, limit = 3500) {
   try {
     const r = await fetch(url, { headers: { 'user-agent': UA }, redirect: 'follow' });
-    if (!r.ok) return `[${url} returned ${r.status}]`;
-    return strip(await r.text()).slice(0, limit);
+    if (!r.ok) return { url, ok: false, why: `HTTP ${r.status}` };
+    const text = strip(await r.text()).slice(0, limit);
+    if (!text.trim()) return { url, ok: false, why: 'empty after stripping markup' };
+    return { url, ok: true, text };
   } catch (e) {
-    return `[${url} failed: ${e.message}]`;
+    return { url, ok: false, why: e.message };
   }
 }
 
@@ -109,7 +115,12 @@ reel for it.`;
         signal: AbortSignal.timeout(120000),
       });
       if (!res.ok) { problems.push(`${model}: HTTP ${res.status}`); continue; }
-      const txt = (await res.json()).choices[0].message.content;
+      const body = await res.json();
+      const txt = body?.choices?.[0]?.message?.content;
+      if (typeof txt !== 'string') {
+        problems.push(`${model}: unexpected response shape ${JSON.stringify(body).slice(0, 160)}`);
+        continue;
+      }
       const m = txt.match(/\{[\s\S]*\}/);
       if (!m) { problems.push(`${model}: no JSON in reply`); continue; }
       console.log(`  (model: ${model})`);
@@ -127,11 +138,21 @@ reel for it.`;
   const env = loadEnv();
 
   console.log('fetching sources...');
-  const sources = (await Promise.all([
+  const fetched = await Promise.all([
     grab('https://github.com/trending?since=daily'),
     grab('https://huggingface.co/spaces'),
     grab('https://launchaijam.com/new-ai-tools'),
-  ])).join('\n\n---\n\n');
+  ]);
+  for (const f of fetched.filter(f => !f.ok)) {
+    console.error(`  ! source unavailable: ${f.url} (${f.why})`);
+  }
+  const usable = fetched.filter(f => f.ok);
+  if (!usable.length) {
+    throw new Error('every source page failed to fetch. Writing a reel from no\n' +
+      '  current sources means the model invents the tool, which is the one\n' +
+      '  failure that can kill the account. Fix the network and re-run.');
+  }
+  const sources = usable.map(f => f.text).join('\n\n---\n\n');
 
   const coveredPath = path.resolve(ROOT, '..', 'covered.md');
   const covered = fs.existsSync(coveredPath)
@@ -139,6 +160,12 @@ reel for it.`;
 
   console.log('asking NVIDIA NIM...');
   const pick = await askNim(env, sources, covered);
+  for (const field of ['tool', 'url', 'keyword', 'script']) {
+    if (typeof pick[field] !== 'string' || !pick[field].trim()) {
+      throw new Error(`the model's reply has no usable "${field}". Re-run, or try a\n` +
+        '  different model in NIM_MODELS.');
+    }
+  }
   console.log(`  -> ${pick.tool}  [${pick.keyword}]`);
 
   const n = String(fs.readdirSync(path.join(ROOT, 'reels'))
